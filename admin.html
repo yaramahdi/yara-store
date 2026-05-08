@@ -910,9 +910,45 @@
       cursor: pointer;
     }
 
+    /* Mobile bottom nav */
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      left: 0;
+      background: white;
+      border-top: 1.5px solid var(--border);
+      z-index: 200;
+      padding: 6px 0 env(safe-area-inset-bottom);
+    }
+    .mobile-nav-inner {
+      display: flex;
+      justify-content: space-around;
+    }
+    .mobile-nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 8px 4px;
+      font-size: 10px;
+      font-family: 'Cairo', sans-serif;
+      color: var(--text-light);
+      border: none;
+      background: none;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .mobile-nav-btn .mn-icon { font-size: 20px; line-height: 1; }
+    .mobile-nav-btn.active { color: var(--primary); }
+
     /* Responsive */
     @media (max-width: 900px) {
       .admin-sidebar { display: none; }
+      .mobile-nav { display: block; }
+      .admin-main { padding-bottom: 80px; }
       .stats-row { grid-template-columns: repeat(2, 1fr); }
       .settings-grid { grid-template-columns: 1fr; }
       .form-grid { grid-template-columns: 1fr; }
@@ -1369,6 +1405,24 @@
 <div class="new-order-toast" id="new-order-toast"
      onclick="showTab('orders');this.classList.remove('show')"></div>
 
+<!-- Mobile bottom nav -->
+<nav class="mobile-nav" id="mobile-nav">
+  <div class="mobile-nav-inner">
+    <button class="mobile-nav-btn active" id="mnav-products" onclick="showTab('products')">
+      <span class="mn-icon">👗</span> المنتجات
+    </button>
+    <button class="mobile-nav-btn" id="mnav-orders" onclick="showTab('orders')">
+      <span class="mn-icon">📦</span> الطلبات
+    </button>
+    <button class="mobile-nav-btn" id="mnav-settings" onclick="showTab('settings')">
+      <span class="mn-icon">⚙️</span> الإعدادات
+    </button>
+    <button class="mobile-nav-btn" id="mnav-password" onclick="showTab('password')">
+      <span class="mn-icon">🔐</span> المرور
+    </button>
+  </div>
+</nav>
+
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
 <script src="firebase.js"></script>
@@ -1479,9 +1533,12 @@ async function initDashboard() {
 function showTab(name) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   const link = document.getElementById('link-' + name);
   if (link) link.classList.add('active');
+  const mlink = document.getElementById('mnav-' + name);
+  if (mlink) mlink.classList.add('active');
   if (name === 'orders') renderOrders();
 }
 

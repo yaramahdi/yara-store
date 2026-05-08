@@ -863,7 +863,7 @@ function sendToWhatsApp(order) {
     `شكراً لطلبك! سيتم التواصل معك قريباً ❤️`;
 
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
-  window.open(url, "_blank");
+  window.location.href = url;
 }
 
 // ===== TOAST =====
