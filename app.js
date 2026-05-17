@@ -159,22 +159,38 @@ async function init() {
   if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:80px 20px;color:#bbb;font-size:15px">جاري تحميل المنتجات...</div>';
 
   await Promise.all([loadProducts(), loadBankInfo()]);
+
+  if (state.productsLoadError) {
+    const grid = document.getElementById("products-grid");
+    if (grid) grid.innerHTML = `
+      <div style="grid-column:1/-1;text-align:center;padding:60px 20px">
+        <div style="font-size:38px;margin-bottom:12px">📡</div>
+        <div style="font-size:16px;font-weight:700;color:#333;margin-bottom:8px">تعذّر تحميل المنتجات</div>
+        <div style="font-size:13px;color:#999;margin-bottom:20px">يرجى التحقق من الاتصال بالإنترنت ثم حاولي مجدداً</div>
+        <button onclick="location.reload()" style="background:#B5547A;color:white;border:none;padding:12px 28px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:14px;cursor:pointer;font-weight:700">إعادة المحاولة</button>
+      </div>`;
+    return;
+  }
+
   renderProducts();
 }
 
 async function loadProducts() {
-  try {
-    const snap = await db.collection('products').get();
-    
-    if (snap.empty) {
-      state.products = [...DEFAULT_PRODUCTS];
-    } else {
-      state.products = snap.docs.map(doc => doc.data());
+  const grid = document.getElementById("products-grid");
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const snap = await db.collection('products').get();
+      state.products = snap.empty ? [...DEFAULT_PRODUCTS] : snap.docs.map(doc => doc.data());
+      return;
+    } catch (e) {
+      if (attempt < 3) {
+        if (grid) grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#999;font-size:14px">جاري إعادة الاتصال... (${attempt}/3)</div>`;
+        await new Promise(r => setTimeout(r, 4000));
+      } else {
+        state.products = [];
+        state.productsLoadError = true;
+      }
     }
-  } catch (e) {
-    console.error('خطأ في تحميل المنتجات من Firebase:', e);
-    // في حالة خطأ الاتصال بـ Firebase، استخدمي البيانات الافتراضية
-    state.products = [...DEFAULT_PRODUCTS];
   }
 }
 
