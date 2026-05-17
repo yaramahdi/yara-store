@@ -13,129 +13,6 @@ let BANK_INFO = {
 };
 
 
-// ===== DEFAULT PRODUCTS =====
-const DEFAULT_PRODUCTS = [
-  {
-    id: 1,
-    name: "بلوزة ساتان حريرية",
-    category: "بلايز قصيرة",
-    price: 140,
-    originalPrice: 175,
-    discount: 20,
-    sizes: ["XS","S","M","L","XL"],
-    description: "ملمس حريري فاخر مع لمعة هادئة. مثالية تحت بليز أو منفردة. تشكيلة محدودة ضمن مجموعة ربيع ٢٠٢٦.",
-    image: "",
-    images: [],
-    rating: 4.9,
-    reviews: 21,
-    inStock: true
-  },
-  {
-    id: 2,
-    name: "عباية وردية بأنامة للسفرات",
-    category: "عبايات",
-    price: 310,
-    originalPrice: 390,
-    discount: 21,
-    sizes: ["S","M","L","XL"],
-    description: "عباية أنيقة بخامة أنامة خفيفة مناسبة للسفر والرحلات. تصميم عصري بلمسة فلسطينية.",
-    image: "",
-    images: [],
-    rating: 4.8,
-    reviews: 14,
-    inStock: true
-  },
-  {
-    id: 3,
-    name: "عباية سوداء مطرزة بالأمثل",
-    category: "عبايات",
-    price: 370,
-    originalPrice: 460,
-    discount: 20,
-    sizes: ["S","M","L","XL","XXL"],
-    description: "عباية سوداء فاخرة بتطريز يدوي دقيق. قطعة مميزة لكل مناسبة.",
-    image: "",
-    images: [],
-    rating: 4.9,
-    reviews: 32,
-    inStock: true
-  },
-  {
-    id: 4,
-    name: "عباية كريم بخوف ذهبية",
-    category: "عبايات",
-    price: 380,
-    originalPrice: 0,
-    discount: 0,
-    sizes: ["S","M","L","XL"],
-    description: "عباية بلون الكريم الهادئ مع تطريز ذهبي راقٍ. مثالية للسهرات والمناسبات الخاصة.",
-    image: "",
-    images: [],
-    rating: 5.0,
-    reviews: 8,
-    inStock: true
-  },
-  {
-    id: 5,
-    name: "عباية نجع فطرية",
-    category: "عبايات",
-    price: 420,
-    originalPrice: 520,
-    discount: 19,
-    sizes: ["M","L","XL"],
-    description: "عباية تراثية بتطريز فلسطيني أصيل. كل قطعة صُنعت بيد فنانة محلية.",
-    image: "",
-    images: [],
-    rating: 4.7,
-    reviews: 19,
-    inStock: true
-  },
-  {
-    id: 6,
-    name: "فستان ربيعي زهري",
-    category: "فساتين قصيرة",
-    price: 220,
-    originalPrice: 275,
-    discount: 20,
-    sizes: ["XS","S","M","L"],
-    description: "فستان خفيف بطبعات زهرية جميلة. مثالي للنزهات والمناسبات الربيعية.",
-    image: "",
-    images: [],
-    rating: 4.8,
-    reviews: 27,
-    inStock: true
-  },
-  {
-    id: 7,
-    name: "فستان محجب بيج أنيق",
-    category: "فساتين محجب",
-    price: 265,
-    originalPrice: 0,
-    discount: 0,
-    sizes: ["S","M","L","XL"],
-    description: "فستان محتشم بقصة واسعة وقماش عالي الجودة. يناسب الدوام والمناسبات.",
-    image: "",
-    images: [],
-    rating: 4.9,
-    reviews: 41,
-    inStock: true
-  },
-  {
-    id: 8,
-    name: "بلوزة قطنية مطبوعة",
-    category: "بلايز قصيرة",
-    price: 95,
-    originalPrice: 120,
-    discount: 21,
-    sizes: ["XS","S","M","L","XL"],
-    description: "بلوزة قطن ١٠٠٪ بطبعة عصرية. مريحة يومياً ويمكن تنسيقها بأي شيء.",
-    image: "",
-    images: [],
-    rating: 4.6,
-    reviews: 55,
-    inStock: true
-  }
-];
 
 // ===== STATE =====
 let state = {
@@ -150,18 +27,23 @@ let state = {
 };
 
 // ===== INIT =====
+const _SPINNER_HTML = `<style>@keyframes _yspin{to{transform:rotate(360deg)}}</style>
+<div style="grid-column:1/-1;text-align:center;padding:80px 20px">
+  <div style="width:44px;height:44px;border:4px solid #f0d8e5;border-top-color:#B5547A;border-radius:50%;animation:_yspin .8s linear infinite;margin:0 auto 16px"></div>
+  <div style="color:#aaa;font-size:14px">جاري تحميل المنتجات...</div>
+</div>`;
+
 async function init() {
   loadCart();
   loadWishlist();
   updateCartBadge();
 
   const grid = document.getElementById("products-grid");
-  if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:80px 20px;color:#bbb;font-size:15px">جاري تحميل المنتجات...</div>';
+  if (grid) grid.innerHTML = _SPINNER_HTML;
 
   await Promise.all([loadProducts(), loadBankInfo()]);
 
   if (state.productsLoadError) {
-    const grid = document.getElementById("products-grid");
     if (grid) grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:60px 20px">
         <div style="font-size:38px;margin-bottom:12px">📡</div>
@@ -180,11 +62,15 @@ async function loadProducts() {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const snap = await db.collection('products').get();
-      state.products = snap.empty ? [...DEFAULT_PRODUCTS] : snap.docs.map(doc => doc.data());
+      state.products = snap.docs.map(doc => doc.data());
       return;
     } catch (e) {
       if (attempt < 3) {
-        if (grid) grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:#999;font-size:14px">جاري إعادة الاتصال... (${attempt}/3)</div>`;
+        if (grid) grid.innerHTML = `<style>@keyframes _yspin{to{transform:rotate(360deg)}}</style>
+          <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
+            <div style="width:44px;height:44px;border:4px solid #f0d8e5;border-top-color:#B5547A;border-radius:50%;animation:_yspin .8s linear infinite;margin:0 auto 16px"></div>
+            <div style="color:#aaa;font-size:14px">جاري إعادة الاتصال... (محاولة ${attempt + 1} من 3)</div>
+          </div>`;
         await new Promise(r => setTimeout(r, 4000));
       } else {
         state.products = [];
@@ -279,12 +165,10 @@ function renderProducts(filter) {
   }
 
   if (filtered.length === 0) {
-    grid.innerHTML = `
-      <div class="no-products">
-        <div class="no-icon">🔍</div>
-        <p>لا يوجد منتجات في هذه الفئة حالياً</p>
-        <small>جربي فئة أخرى أو عودي لاحقاً</small>
-      </div>`;
+    const msg = state.products.length === 0
+      ? '<p>لا يوجد منتجات بعد — ترقّبي وصول المجموعة الجديدة قريباً ✨</p>'
+      : '<p>لا يوجد منتجات في هذه الفئة حالياً</p><small>جربي فئة أخرى أو عودي لاحقاً</small>';
+    grid.innerHTML = `<div class="no-products"><div class="no-icon">🔍</div>${msg}</div>`;
     return;
   }
 
