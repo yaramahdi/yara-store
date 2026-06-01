@@ -507,6 +507,52 @@
 
     .price-hint.on-sale { color: var(--primary); }
 
+    .category-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .category-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(181, 84, 122, 0.12);
+      color: var(--text);
+      font-size: 13px;
+      border: 1px solid rgba(181, 84, 122, 0.22);
+    }
+
+    .category-chip button {
+      background: none;
+      border: none;
+      color: var(--danger);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .label-input-row {
+      display: grid;
+      grid-template-columns: 1fr 180px;
+      gap: 10px;
+      align-items: center;
+      margin-top: 6px;
+    }
+
+    .label-input-row input,
+    .label-input-row select {
+      width: 100%;
+    }
+
+    .label-input-row select {
+      min-width: 180px;
+    }
+
     /* Sizes selector */
     .sizes-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
 
@@ -1212,6 +1258,12 @@
 
             <div class="pay-section-title">البنك الإسلامي الفلسطيني</div>
             <div class="field-group">
+              <label class="toggle-switch" onclick="togglePaymentVisibility('islamic')">
+                <div class="toggle-track" id="track-show-islamic"><div class="toggle-knob"></div></div>
+                <span class="toggle-label">إظهار البنك الإسلامي</span>
+              </label>
+            </div>
+            <div class="field-group">
               <label>رقم الحساب</label>
               <input type="text" id="set-islamic-account" placeholder="XXXX-XXXX-XXXX-XXXX" dir="ltr">
             </div>
@@ -1226,6 +1278,12 @@
 
             <div class="pay-section-title" style="margin-top:14px">محفظة بنك فلسطين</div>
             <div class="field-group">
+              <label class="toggle-switch" onclick="togglePaymentVisibility('palestine')">
+                <div class="toggle-track" id="track-show-palestine"><div class="toggle-knob"></div></div>
+                <span class="toggle-label">إظهار المحفظة</span>
+              </label>
+            </div>
+            <div class="field-group">
               <label>رقم المحفظة</label>
               <input type="tel" id="set-palestine-wallet" placeholder="059-XXX-XXXX" dir="ltr">
             </div>
@@ -1235,6 +1293,12 @@
             </div>
 
             <div class="pay-section-title" style="margin-top:14px">تحويل بنك فلسطين</div>
+            <div class="field-group">
+              <label class="toggle-switch" onclick="togglePaymentVisibility('palBank')">
+                <div class="toggle-track" id="track-show-palBank"><div class="toggle-knob"></div></div>
+                <span class="toggle-label">إظهار تحويل البنك</span>
+              </label>
+            </div>
             <div class="field-group">
               <label>رقم الحساب</label>
               <input type="text" id="set-pal-bank-account" placeholder="XXXX-XXXX-XXXX-XXXX" dir="ltr">
@@ -1249,6 +1313,18 @@
             </div>
 
             <button class="save-btn" onclick="saveBankInfo()">💾 حفظ بيانات الدفع</button>
+          </div>
+
+          <div class="settings-card">
+            <h3>🗂️ فئات المتجر</h3>
+            <div class="settings-info">أضيفي أو حذفي فئات جديدة مثل ملابس رجالي أو أطفال. الفئة "الكل" تظهر تلقائياً في المتجر.</div>
+            <div id="category-tags" class="category-tags"></div>
+            <div class="field-group">
+              <label>أضيفي فئة جديدة</label>
+              <input type="text" id="new-category-input" placeholder="مثال: ملابس رجالي">
+            </div>
+            <button class="save-btn" onclick="addCategory()">+ إضافة فئة</button>
+            <button class="save-btn" style="margin-top:12px" onclick="saveCategories()">💾 حفظ الفئات</button>
           </div>
 
           <!-- Announcement -->
@@ -1324,17 +1400,27 @@
           <label>الفئة *</label>
           <select id="f-category">
             <option value="">-- اختاري الفئة --</option>
-            <option value="فساتين محجب">فساتين محجب</option>
-            <option value="فساتين قصيرة">فساتين قصيرة</option>
-            <option value="بلايز قصيرة">بلايز قصيرة</option>
-            <option value="عبايات">عبايات</option>
-            <option value="طقوم">طقوم</option>
-            <option value="تنانير">تنانير</option>
-            <option value="بناطيل">بناطيل</option>
-            <option value="جواكيت">جواكيت</option>
-            <option value="إكسسوارات">إكسسوارات</option>
-            <option value="أحذية">أحذية</option>
           </select>
+        </div>
+
+        <!-- Collection -->
+        <div class="form-field form-full">
+          <label>اسم الكولكشن (اختياري)</label>
+          <input type="text" id="f-collection-name" placeholder="مثال: كولكشن الصيف" />
+        </div>
+
+        <!-- Collection label -->
+        <div class="form-field form-full">
+          <label>ليبل الكولكشن (اختياري)</label>
+          <input type="text" id="f-collection-label" placeholder="مثال: جديد، حصري، إطلاق خاص" />
+          <div class="price-hint">إذا أعطيت المنتج كولكشن، يمكن استخدام نفس الاسم لعدة منتجات.</div>
+        </div>
+
+        <!-- Publish time -->
+        <div class="form-field form-full">
+          <label>موعد الظهور للجمهور (اختياري)</label>
+          <input type="datetime-local" id="f-publish-at" />
+          <div class="price-hint">سيبقى المنتج مخفيًا حتى الوقت المحدد.</div>
         </div>
 
         <!-- Price -->
@@ -1389,6 +1475,22 @@
           <textarea id="f-description" rows="3" placeholder="اوصفي المنتج: الخامة، المقاسات، الاستخدام..."></textarea>
         </div>
 
+        <!-- Product label -->
+        <div class="form-field form-full">
+          <label>ليبل المنتج (اختياري)</label>
+          <div class="label-input-row">
+            <select id="f-label-suggest" onchange="applyLabelSuggestion(this.value)">
+              <option value="">اختر ليبل جاهز</option>
+              <option value="جديد">جديد</option>
+              <option value="عرض خاص">عرض خاص</option>
+              <option value="حصري">حصري</option>
+              <option value="محدود الكمية">محدود الكمية</option>
+            </select>
+            <input type="text" id="f-label" placeholder="مثال: جديد، حصري، أو اتركه فارغاً">
+          </div>
+          <div class="price-hint">سيظهر هذا الليبل في بطاقة المنتج. "آخر قطعة" يُضاف تلقائياً عندما تكون الكمية 1.</div>
+        </div>
+
         <!-- Per-product Size Chart -->
         <div class="form-field form-full">
           <label>جدول مقاسات المنتج <span style="font-weight:400;color:var(--text-light)">(اختياري — يظهر للزبون عند الضغط على "جدول المقاسات")</span></label>
@@ -1409,13 +1511,6 @@
         <div class="form-field">
           <label>عدد المراجعات</label>
           <input type="number" id="f-reviews" placeholder="0" min="0" value="0">
-        </div>
-
-        <!-- Quantity -->
-        <div class="form-field">
-          <label>الكمية المتوفرة</label>
-          <input type="number" id="f-quantity" placeholder="مثال: 5" min="0" value="">
-          <div style="font-size:11px;color:var(--text-light);margin-top:4px">اتركي فارغاً لكمية غير محدودة</div>
         </div>
 
         <!-- Stock toggle -->
@@ -1497,13 +1592,15 @@
 //  CONFIG & STATE
 // ═══════════════════════════════════════════════════════════════
 const DEFAULT_PASS = 'yara2024';
-let editingId      = null;
-let currentImages  = [];
-let stockStatus    = true;
+let editingId       = null;
+let currentImages   = [];
+let stockStatus     = true;
 let pendingDeleteId = null;
-let adminProducts  = [];
-let adminOrders    = [];
-let adminLoadError = false;
+let adminProducts   = [];
+let adminOrders     = [];
+let adminCategories = [];
+let paymentVisibility = { islamic: true, palestine: true, palBank: true };
+let adminLoadError  = false;
 let currentOrderFilter = 'all';
 
 const adminSessionStart = Date.now();
@@ -1588,7 +1685,8 @@ document.addEventListener('click', () => {
 //  DASHBOARD INIT
 // ═══════════════════════════════════════════════════════════════
 async function initDashboard() {
-  await Promise.all([loadAdminProducts(), loadSettings(), loadCatImages(), loadAdminOrders()]);
+  await loadSettings();
+  await Promise.all([loadAdminProducts(), loadCatImages(), loadAdminOrders()]);
   renderProductsTable();
   renderOrders();
   startOrdersListener();
@@ -1680,17 +1778,26 @@ function renderProductsTable() {
     const sizeTags  = (p.sizes || []).map(s => `<span class="size-tag">${s}</span>`).join('');
     const qtyDisplay = p.quantity !== undefined
       ? `<span style="font-size:12px;font-weight:700;color:${p.quantity <= 2 ? 'var(--danger)' : 'var(--success)'}">${p.quantity} قطعة</span>`
-      : `<span style="font-size:11px;color:var(--text-light)">غير محدود</span>`;
+      : `<span style="font-size:12px;font-weight:700;color:var(--success)">قطعة واحدة</span>`;
 
     const stockBadge  = p.inStock !== false
       ? `<span class="stock-badge in">✓ متوفر</span>`
       : `<span class="stock-badge out">✗ نفذ</span>`;
     const toggleLabel = p.inStock !== false ? 'تعطيل' : 'تفعيل';
 
+    const collectionInfo = p.collectionName
+      ? `<div style="font-size:12px;color:var(--text-mid);margin-top:4px">
+           <strong>${p.collectionName}</strong>${p.collectionLabel ? ` — ${p.collectionLabel}` : ''}
+         </div>`
+      : '';
+    const launchInfo = p.publishAt
+      ? `<div style="font-size:11px;color:var(--danger);margin-top:4px">سيظهر للجمهور: ${new Date(p.publishAt).toLocaleString('ar-EG', { hour12:false })}</div>`
+      : '';
+
     return {
       tableRow: `<tr>
         <td>${imgCell}</td>
-        <td><div class="product-row-name">${p.name}</div></td>
+        <td><div class="product-row-name">${p.name}</div>${collectionInfo}${launchInfo}</td>
         <td><span style="font-size:12px;color:var(--text-mid)">${p.category || '—'}</span></td>
         <td>${priceCell}</td>
         <td><div class="sizes-tags">${sizeTags || '<span style="color:var(--text-light);font-size:12px">—</span>'}</div></td>
@@ -1742,15 +1849,19 @@ function openProductModal(id) {
   currentImages = [];
   stockStatus   = true;
 
-  document.getElementById('f-name').value          = '';
-  document.getElementById('f-category').value      = '';
-  document.getElementById('f-price').value         = '';
-  document.getElementById('f-original-price').value = '';
-  document.getElementById('f-description').value   = '';
-  document.getElementById('f-rating').value        = '4.9';
-  document.getElementById('f-reviews').value       = '0';
-  document.getElementById('f-quantity').value      = '';
-  document.getElementById('img-previews').innerHTML = '';
+  document.getElementById('f-name').value              = '';
+  document.getElementById('f-category').value          = '';
+  document.getElementById('f-collection-name').value   = '';
+  document.getElementById('f-collection-label').value  = '';
+  document.getElementById('f-publish-at').value        = '';
+  document.getElementById('f-price').value             = '';
+  document.getElementById('f-original-price').value    = '';
+  document.getElementById('f-description').value       = '';
+  document.getElementById('f-label').value             = '';
+  document.getElementById('f-label-suggest').value     = '';
+  document.getElementById('f-rating').value            = '4.9';
+  document.getElementById('f-reviews').value           = '0';
+  document.getElementById('img-previews').innerHTML     = '';
   document.getElementById('price-hint').textContent = '';
   document.getElementById('price-hint').className  = 'price-hint';
 
@@ -1764,14 +1875,17 @@ function openProductModal(id) {
   if (id) {
     const p = getProducts().find(x => x.id === id);
     if (p) {
-      document.getElementById('f-name').value          = p.name || '';
-      document.getElementById('f-category').value      = p.category || '';
-      document.getElementById('f-price').value         = p.price || '';
-      document.getElementById('f-original-price').value = p.originalPrice > 0 ? p.originalPrice : '';
-      document.getElementById('f-description').value   = p.description || '';
-      document.getElementById('f-rating').value        = p.rating || '4.9';
-      document.getElementById('f-reviews').value       = p.reviews || '0';
-      document.getElementById('f-quantity').value      = p.quantity !== undefined ? p.quantity : '';
+      document.getElementById('f-name').value              = p.name || '';
+      document.getElementById('f-category').value          = p.category || '';
+      document.getElementById('f-collection-name').value   = p.collectionName || '';
+      document.getElementById('f-collection-label').value  = p.collectionLabel || '';
+      document.getElementById('f-publish-at').value        = p.publishAt ? toLocalDateTime(p.publishAt) : '';
+      document.getElementById('f-price').value             = p.price || '';
+      document.getElementById('f-original-price').value    = p.originalPrice > 0 ? p.originalPrice : '';
+      document.getElementById('f-description').value       = p.description || '';
+      document.getElementById('f-label').value             = p.label || '';
+      document.getElementById('f-rating').value            = p.rating || '4.9';
+      document.getElementById('f-reviews').value           = p.reviews || '0';
       stockStatus = p.inStock !== false;
       setStockUI(stockStatus);
 
@@ -1803,6 +1917,13 @@ function closeProductModal() {
   currentImages = [];
 }
 
+function toLocalDateTime(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0,16);
+}
+
 function setStockUI(inStock) {
   stockStatus = inStock;
   document.getElementById('stock-track').classList.toggle('on', inStock);
@@ -1830,6 +1951,10 @@ function addCustomSizeTag(size) {
   btn.textContent = size;
   btn.onclick = function() { toggleSize(this); };
   selector.appendChild(btn);
+}
+
+function applyLabelSuggestion(value) {
+  document.getElementById('f-label').value = value;
 }
 
 function getSelectedSizes() {
@@ -1906,23 +2031,24 @@ async function saveProduct() {
   if (originalPrice > 0 && originalPrice <= price) { toast('⚠️ السعر الأصلي يجب أن يكون أكبر من سعر البيع'); return; }
 
   const images   = currentImages.map(i => i.url);
-  const qtyVal   = document.getElementById('f-quantity').value;
-  const quantity = qtyVal !== '' ? parseInt(qtyVal) : undefined;
-
+  const publishAtValue = document.getElementById('f-publish-at').value;
   const product = {
     id:            editingId || Date.now(),
     name,
     category,
+    collectionName:  document.getElementById('f-collection-name').value.trim(),
+    collectionLabel: document.getElementById('f-collection-label').value.trim(),
+    publishAt:       publishAtValue ? new Date(publishAtValue).toISOString() : '',
     price,
     originalPrice: originalPrice || 0,
     discount:      (originalPrice > price && originalPrice > 0) ? Math.round((1 - price / originalPrice) * 100) : 0,
     sizes:         getSelectedSizes(),
     sizeChart:     _prodChart.filter(r => r.size.trim() || r.details.trim()),
     description:   document.getElementById('f-description').value.trim(),
+    label:         document.getElementById('f-label').value.trim(),
     rating:        parseFloat(document.getElementById('f-rating').value) || 4.9,
     reviews:       parseInt(document.getElementById('f-reviews').value) || 0,
-    inStock:       quantity !== undefined ? quantity > 0 : stockStatus,
-    quantity,
+    inStock:       stockStatus,
     image:         images[0] || '',
     images:        images.length > 1 ? images : [],
     updatedAt:     Date.now()
@@ -1980,7 +2106,15 @@ async function deleteProduct(id) {
 async function loadSettings() {
   try {
     const docSnap = await db.collection('settings').doc('main').get();
-    if (!docSnap.exists) return;
+    if (!docSnap.exists) {
+      adminCategories = ['فساتين محجب', 'فساتين قصيرة', 'بلايز قصيرة', 'عبايات', 'أحذية'];
+      renderCategoryTags();
+      renderCategoryOptions();
+      setPaymentVisibilityUI('islamic', paymentVisibility.islamic);
+      setPaymentVisibilityUI('palestine', paymentVisibility.palestine);
+      setPaymentVisibilityUI('palBank', paymentVisibility.palBank);
+      return;
+    }
     const d = docSnap.data();
     if (d.whatsapp)         document.getElementById('set-whatsapp').value         = d.whatsapp;
     if (d.phone)            document.getElementById('set-phone').value            = d.phone;
@@ -1994,6 +2128,20 @@ async function loadSettings() {
     if (d.pal_bank_iban)    document.getElementById('set-pal-bank-iban').value    = d.pal_bank_iban;
     if (d.pal_bank_name)    document.getElementById('set-pal-bank-name').value    = d.pal_bank_name;
     if (d.announce)         document.getElementById('set-announce').value         = d.announce;
+
+    adminCategories = Array.isArray(d.categories) && d.categories.length
+      ? Array.from(new Set(d.categories.filter(cat => cat && cat.trim() && cat !== 'الكل').map(cat => cat.trim())))
+      : ['فساتين محجب', 'فساتين قصيرة', 'بلايز قصيرة', 'عبايات', 'أحذية'];
+
+    if (d.paymentVisibility) {
+      paymentVisibility = { ...paymentVisibility, ...d.paymentVisibility };
+    }
+
+    renderCategoryTags();
+    renderCategoryOptions();
+    setPaymentVisibilityUI('islamic', paymentVisibility.islamic);
+    setPaymentVisibilityUI('palestine', paymentVisibility.palestine);
+    setPaymentVisibilityUI('palBank', paymentVisibility.palBank);
   } catch(e) { console.error(e); }
 }
 
@@ -2024,7 +2172,8 @@ async function saveBankInfo() {
       palestine_name:     document.getElementById('set-palestine-name').value.trim() || 'يارا',
       pal_bank_account:   document.getElementById('set-pal-bank-account').value.trim(),
       pal_bank_iban:      document.getElementById('set-pal-bank-iban').value.trim(),
-      pal_bank_name:      document.getElementById('set-pal-bank-name').value.trim() || 'يارا'
+      pal_bank_name:      document.getElementById('set-pal-bank-name').value.trim() || 'يارا',
+      paymentVisibility,
     });
     toast('✓ تم حفظ بيانات الدفع — ستظهر في الموقع فوراً');
   } catch(e) { toast('⚠️ خطأ في الحفظ'); }
@@ -2035,6 +2184,63 @@ async function saveAnnounce() {
     await _mergeSettings({ announce: document.getElementById('set-announce').value.trim() });
     toast('✓ تم حفظ الإعلان');
   } catch(e) { toast('⚠️ خطأ في الحفظ'); }
+}
+
+function renderCategoryTags() {
+  const container = document.getElementById('category-tags');
+  if (!container) return;
+  if (!adminCategories.length) {
+    container.innerHTML = '<span style="color:var(--text-light);font-size:13px">لا توجد فئات بعد. أضيفي فئة جديدة أعلاه.</span>';
+    return;
+  }
+  container.innerHTML = adminCategories.map(cat => `
+    <span class="category-chip">
+      ${cat}
+      <button type="button" onclick='removeCategory(${JSON.stringify(cat)})'>✕</button>
+    </span>`).join('');
+}
+
+function renderCategoryOptions() {
+  const select = document.getElementById('f-category');
+  if (!select) return;
+  select.innerHTML = '<option value="">-- اختاري الفئة --</option>' + adminCategories.map(cat =>
+    `<option value="${cat}">${cat}</option>`).join('');
+}
+
+function addCategory() {
+  const input = document.getElementById('new-category-input');
+  const value = input.value.trim();
+  if (!value) { toast('⚠️ اكتب اسم الفئة'); return; }
+  if (value === 'الكل' || adminCategories.includes(value)) { toast('⚠️ الفئة موجودة بالفعل'); return; }
+  adminCategories.push(value);
+  input.value = '';
+  renderCategoryTags();
+  renderCategoryOptions();
+}
+
+function removeCategory(cat) {
+  adminCategories = adminCategories.filter(c => c !== cat);
+  renderCategoryTags();
+  renderCategoryOptions();
+}
+
+async function saveCategories() {
+  try {
+    await _mergeSettings({ categories: adminCategories });
+    toast('✓ تم حفظ الفئات');
+  } catch(e) { toast('⚠️ خطأ في الحفظ'); }
+}
+
+function togglePaymentVisibility(method) {
+  if (!(method in paymentVisibility)) return;
+  paymentVisibility[method] = !paymentVisibility[method];
+  setPaymentVisibilityUI(method, paymentVisibility[method]);
+}
+
+function setPaymentVisibilityUI(method, enabled) {
+  const track = document.getElementById(`track-show-${method}`);
+  if (!track) return;
+  track.classList.toggle('on', enabled);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2068,14 +2274,20 @@ function removeProdChartRow(i) {
 // ═══════════════════════════════════════════════════════════════
 //  CATEGORY IMAGES
 // ═══════════════════════════════════════════════════════════════
-const CAT_LIST = [
-  { cat: 'الكل',         emoji: '✨' },
-  { cat: 'فساتين محجب',  emoji: '👗' },
-  { cat: 'فساتين قصيرة', emoji: '👘' },
-  { cat: 'بلايز قصيرة',  emoji: '👚' },
-  { cat: 'عبايات',        emoji: '🧕' },
-  { cat: 'أحذية',         emoji: '👟' },
-];
+const CATEGORY_EMOJIS = {
+  'فساتين محجب': '👗',
+  'فساتين قصيرة': '👘',
+  'بلايز قصيرة': '👚',
+  'عبايات': '🧕',
+  'أحذية': '👟',
+  'طقوم': '👔',
+  'تنانير': '👗',
+  'بناطيل': '👖',
+  'جواكيت': '🧥',
+  'إكسسوارات': '👜',
+  'ملابس رجالي': '👔',
+  'أطفال': '🧒',
+};
 
 let catImages = {};
 
@@ -2088,8 +2300,11 @@ async function loadCatImages() {
 }
 
 function renderCatImagesGrid() {
-  document.getElementById('cat-images-grid').innerHTML = CAT_LIST.map(({ cat, emoji }, i) => {
+  const grid = document.getElementById('cat-images-grid');
+  if (!grid) return;
+  grid.innerHTML = adminCategories.map((cat, i) => {
     const img = catImages[cat];
+    const emoji = CATEGORY_EMOJIS[cat] || '🛍️';
     return `
       <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
         <div style="width:88px;height:88px;border-radius:50%;border:2px dashed var(--border);overflow:hidden;
@@ -2100,7 +2315,7 @@ function renderCatImagesGrid() {
         </div>
         <input type="file" id="catf-${i}" data-cat="${cat}" accept="image/*" style="display:none" onchange="handleCatImage(this)">
         <div style="font-size:12px;font-weight:700;color:var(--text-mid)">${cat}</div>
-        ${img ? `<button onclick="removeCatImage('${cat}')" style="font-size:11px;color:var(--danger);background:none;border:none;cursor:pointer">حذف</button>` : ''}
+        ${img ? `<button onclick="removeCatImage(${JSON.stringify(cat)})" style="font-size:11px;color:var(--danger);background:none;border:none;cursor:pointer">حذف</button>` : ''}
       </div>`;
   }).join('');
 }

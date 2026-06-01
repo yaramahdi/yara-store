@@ -454,6 +454,8 @@ nav a.active::after { transform: scaleX(1); }
   gap: 20px;
 }
 
+ 
+
 /* ─── PRODUCT CARD ──────────────────────────────────────────────── */
 .product-card {
   background: white;
@@ -588,6 +590,43 @@ nav a.active::after { transform: scaleX(1); }
   letter-spacing: 0.5px;
 }
 
+.product-badges {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  z-index: 7;
+}
+
+.product-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: white;
+  background: rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
+}
+
+.product-badge.last-piece {
+  background: #F5A623;
+}
+
+.product-badge.new {
+  background: #2D7A50;
+}
+
+.product-badge.special {
+  background: #b81b1b;
+}
+
+.product-badge.custom {
+  background: rgba(181, 84, 122, 0.95);
+}
+
 .wish-btn {
   position: absolute;
   top: 10px;
@@ -614,12 +653,18 @@ nav a.active::after { transform: scaleX(1); }
   flex: 1;
 }
 
-.product-cat-tag {
+.product-cat-tag,
+.product-collection-tag {
   font-size: 10.5px;
   color: var(--text-light);
   font-weight: 500;
   margin-bottom: 5px;
   letter-spacing: 0.5px;
+}
+
+.product-collection-tag {
+  display: inline-block;
+  margin-top: 2px;
 }
 
 .product-name {
@@ -1542,6 +1587,16 @@ nav a.active::after { transform: scaleX(1); }
 .pay-mahfaza.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(181,84,122,0.12); }
 .pay-mahfaza.selected .pay-radio { border-color: var(--primary); }
 .pay-mahfaza.selected .pay-radio-dot { background: var(--primary); }
+
+.pay-pal-bank {
+  background: linear-gradient(135deg, #eef5ff 0%, #f6fbff 100%);
+  border-color: #c7d8f4;
+}
+
+.pay-pal-bank:hover { border-color: #5c7cd1; box-shadow: 0 2px 12px rgba(93,124,209,0.10); }
+.pay-pal-bank.selected { border-color: #3B54A2; box-shadow: 0 0 0 3px rgba(59,84,162,0.12); }
+.pay-pal-bank.selected .pay-radio { border-color: #3B54A2; }
+.pay-pal-bank.selected .pay-radio-dot { background: #3B54A2; }
 
 .pay-method-header {
   display: flex;

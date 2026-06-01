@@ -125,37 +125,11 @@
     <p>اختاري فئتك واكتشفي أحدث الأزياء</p>
   </div>
 
-  <div class="cats-grid" id="cats-row">
-    <button class="cat-card active" data-cat="الكل" onclick="filterCategory('الكل')">
-      <div class="cat-circle" data-cat="الكل"><span class="cat-fallback">✨</span></div>
-      <span class="cat-label">الكل</span>
-    </button>
-    <button class="cat-card" data-cat="فساتين محجب" onclick="filterCategory('فساتين محجب')">
-      <div class="cat-circle" data-cat="فساتين محجب"><span class="cat-fallback">👗</span></div>
-      <span class="cat-label">فساتين محجب</span>
-    </button>
-    <button class="cat-card" data-cat="فساتين قصيرة" onclick="filterCategory('فساتين قصيرة')">
-      <div class="cat-circle" data-cat="فساتين قصيرة"><span class="cat-fallback">👘</span></div>
-      <span class="cat-label">فساتين قصيرة</span>
-    </button>
-    <button class="cat-card" data-cat="بلايز قصيرة" onclick="filterCategory('بلايز قصيرة')">
-      <div class="cat-circle" data-cat="بلايز قصيرة"><span class="cat-fallback">👚</span></div>
-      <span class="cat-label">بلايز قصيرة</span>
-    </button>
-    <button class="cat-card" data-cat="عبايات" onclick="filterCategory('عبايات')">
-      <div class="cat-circle" data-cat="عبايات"><span class="cat-fallback">🧕</span></div>
-      <span class="cat-label">عبايات</span>
-    </button>
-    <button class="cat-card" data-cat="أحذية" onclick="filterCategory('أحذية')">
-      <div class="cat-circle" data-cat="أحذية"><span class="cat-fallback">👟</span></div>
-      <span class="cat-label">أحذية</span>
-    </button>
-    <!-- <button class="cat-card" data-cat="طقوم" onclick="filterCategory('طقوم')">
-      <div class="cat-circle" data-cat="طقوم"><span class="cat-fallback">👔</span></div>
-      <span class="cat-label">طقوم</span>
-    </button> -->
+  <div class="cats-grid" id="category-nav">
+    <!-- يتم إنشاؤها ديناميكياً بواسطة app.js -->
   </div>
 </div>
+ 
 
 <!-- ══════════════════════════════════════════════════════════════ -->
 <!--  PRODUCTS                                                     -->
@@ -188,13 +162,9 @@
       </div>
     </div>
 
-    <div class="footer-col">
+    <div class="footer-col" id="footer-cats-links">
       <h4>التسوق</h4>
-      <a href="#" onclick="filterCategory('فساتين محجب'); scrollToProducts(); return false;">فساتين محجب</a>
-      <a href="#" onclick="filterCategory('فساتين قصيرة'); scrollToProducts(); return false;">فساتين قصيرة</a>
-      <a href="#" onclick="filterCategory('بلايز قصيرة'); scrollToProducts(); return false;">بلايز قصيرة</a>
-      <a href="#" onclick="filterCategory('عبايات'); scrollToProducts(); return false;">عبايات</a>
-      <a href="#" onclick="filterCategory('طقوم'); scrollToProducts(); return false;">طقوم</a>
+      <!-- يتم ملؤها ديناميكياً من app.js -->
     </div>
 
     <div class="footer-col">
@@ -289,11 +259,6 @@
 
       <!-- Qty + Add to cart -->
       <div class="qty-add-row">
-        <div class="qty-ctrl">
-          <button class="qty-btn" onclick="changeQty(-1)" aria-label="إنقاص">−</button>
-          <span class="qty-num" id="modal-qty">1</span>
-          <button class="qty-btn" onclick="changeQty(1)" aria-label="زيادة">+</button>
-        </div>
         <button class="add-cart-btn" onclick="addToCart()">
           🛒 إضافة إلى السلة
         </button>
@@ -450,80 +415,8 @@
         إجمالي طلبك: <span id="payment-total">₪ 0</span>
       </div>
 
-      <!-- البنك الإسلامي -->
-      <!-- <div class="pay-method pay-islamic" data-method="islamic" onclick="selectPayment('islamic')">
-        <div class="pay-method-header">
-          <div class="pay-header-main">
-            <img src="image/islamicBankLogo.png" class="pay-logo-img" alt="البنك الإسلامي">
-            <span class="pay-name">البنك الإسلامي الفلسطيني</span>
-          </div>
-          <div class="pay-radio"><div class="pay-radio-dot"></div></div>
-        </div>
-        <div class="pay-details-wrap">
-          <div class="pay-detail">
-            <span class="pay-lbl">رقم الحساب:</span>
-            <span class="pay-val" id="islamic-account">XXXX-XXXX-XXXX</span>
-            <button class="copy-btn" onclick="copyText('islamic-account'); event.stopPropagation()">نسخ</button>
-          </div>
-          <div class="pay-detail">
-            <span class="pay-lbl">الآيبان (IBAN):</span>
-            <span class="pay-val" id="islamic-iban" dir="ltr">PS92XXXXXXXXXXXXXXXXXXXX</span>
-            <button class="copy-btn" onclick="copyText('islamic-iban'); event.stopPropagation()">نسخ</button>
-          </div>
-          <div class="pay-detail">
-            <span class="pay-lbl">اسم المستفيد:</span>
-            <span class="pay-val" id="islamic-name">يارا</span>
-          </div>
-        </div>
-      </div> -->
-
-      <!-- محفظة بنك فلسطين -->
-      <!-- <div class="pay-method pay-mahfaza" data-method="palestine" onclick="selectPayment('palestine')">
-        <div class="pay-method-header">
-          <div class="pay-header-main">
-            <img src="image/mahfazaLogo.png" class="pay-logo-img" alt="محفظة بنك فلسطين">
-            <span class="pay-name">محفظة بنك فلسطين</span>
-          </div>
-          <div class="pay-radio"><div class="pay-radio-dot"></div></div>
-        </div>
-        <div class="pay-details-wrap">
-          <div class="pay-detail">
-            <span class="pay-lbl">رقم المحفظة:</span>
-            <span class="pay-val" id="palestine-wallet">05X-XXX-XXXX</span>
-            <button class="copy-btn" onclick="copyText('palestine-wallet'); event.stopPropagation()">نسخ</button>
-          </div>
-          <div class="pay-detail">
-            <span class="pay-lbl">اسم المستفيد:</span>
-            <span class="pay-val" id="palestine-name">يارا</span>
-          </div>
-        </div>
-      </div> -->
-
-      <!-- تحويل بنك فلسطين -->
-      <div class="pay-method pay-pal-bank" data-method="pal-bank" onclick="selectPayment('pal-bank')">
-        <div class="pay-method-header">
-          <div class="pay-header-main">
-            <img src="image/bankLogo.png" class="pay-logo-img" alt="بنك فلسطين">
-            <span class="pay-name">تحويل بنك فلسطين</span>
-          </div>
-          <div class="pay-radio"><div class="pay-radio-dot"></div></div>
-        </div>
-        <div class="pay-details-wrap">
-          <div class="pay-detail">
-            <span class="pay-lbl">رقم الحساب:</span>
-            <span class="pay-val" id="palestine-account">XXXX-XXXX-XXXX</span>
-            <button class="copy-btn" onclick="copyText('palestine-account'); event.stopPropagation()">نسخ</button>
-          </div>
-          <div class="pay-detail">
-            <span class="pay-lbl">الآيبان (IBAN):</span>
-            <span class="pay-val" id="palestine-iban" dir="ltr">PS92XXXXXXXXXXXXXXXXXXXX</span>
-            <button class="copy-btn" onclick="copyText('palestine-iban'); event.stopPropagation()">نسخ</button>
-          </div>
-          <div class="pay-detail">
-            <span class="pay-lbl">اسم المستفيد:</span>
-            <span class="pay-val" id="pal-bank-name">يارا</span>
-          </div>
-        </div>
+      <div id="payment-methods-container">
+        <!-- طرق الدفع تظهر هنا ديناميكياً -->
       </div>
 
       <div class="payment-note">

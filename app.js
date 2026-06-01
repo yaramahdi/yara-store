@@ -12,7 +12,7 @@ let BANK_INFO = {
   pal_bank_name:    "يارا"
 };
 
-
+const DEFAULT_STORE_CATEGORIES = ['فساتين محجب', 'فساتين قصيرة', 'بلايز قصيرة', 'عبايات', 'أحذية'];
 
 // ===== STATE =====
 let state = {
@@ -23,7 +23,14 @@ let state = {
   currentCategory: "الكل",
   checkoutStep: 1,
   customerInfo: null,
-  selectedPayment: null
+  selectedPayment: null,
+  categories: ['الكل', ...DEFAULT_STORE_CATEGORIES],
+  paymentVisibility: {
+    islamic: true,
+    palestine: true,
+    palBank: true
+  },
+  catImages: {}
 };
 
 // ===== INIT =====
@@ -106,13 +113,17 @@ async function loadBankInfo() {
       if (data.whatsapp) WHATSAPP_NUMBER = data.whatsapp;
       Object.assign(BANK_INFO, data);
 
+      if (Array.isArray(data.categories) && data.categories.length) {
+        const categories = Array.from(new Set(data.categories.filter(cat => cat && cat.trim() && cat !== 'الكل').map(cat => cat.trim())));
+        state.categories = ['الكل', ...categories];
+      }
+
+      if (data.paymentVisibility) {
+        state.paymentVisibility = { ...state.paymentVisibility, ...data.paymentVisibility };
+      }
+
       if (data.catImages) {
-        document.querySelectorAll(".cat-circle[data-cat]").forEach(circle => {
-          const cat = circle.dataset.cat;
-          if (data.catImages[cat]) {
-            circle.innerHTML = `<img src="${data.catImages[cat]}" alt="${cat}">`;
-          }
-        });
+        state.catImages = { ...data.catImages };
       }
 
       if (data.announce) {
@@ -123,6 +134,10 @@ async function loadBankInfo() {
   } catch (e) {
     console.error('خطأ في تحميل الإعدادات:', e);
   }
+
+  renderCategoryNavigation();
+  renderFooterCategoryLinks();
+  renderPaymentMethods();
 
   const ia      = document.getElementById("islamic-account");
   const iiban   = document.getElementById("islamic-iban");
@@ -147,14 +162,124 @@ async function loadBankInfo() {
   if (footerWALink) footerWALink.href = `https://wa.me/${WHATSAPP_NUMBER}`;
 }
 
+function renderCategoryNavigation() {
+  const nav = document.getElementById('category-nav');
+  if (!nav) return;
+  nav.innerHTML = state.categories.map(cat => {
+    const image = state.catImages[cat];
+    const circleContent = image
+      ? `<img src="${image}" alt="${cat}">`
+      : `<span class="cat-fallback">${cat === 'الكل' ? '✨' : '🛍️'}</span>`;
+
+    return `<button class="cat-card${cat === state.currentCategory ? ' active' : ''}" data-cat="${cat}" onclick="renderProducts('${cat}')">
+      <div class="cat-circle" data-cat="${cat}">${circleContent}</div>
+      <span class="cat-label">${cat}</span>
+    </button>`;
+  }).join('');
+}
+
+function renderFooterCategoryLinks() {
+  const container = document.getElementById('footer-cats-links');
+  if (!container) return;
+  container.innerHTML = state.categories.slice(1).map(cat =>
+    `<a href="#" onclick="renderProducts('${cat}'); scrollToProducts(); return false;">${cat}</a>`
+  ).join('');
+}
+
+function renderPaymentMethods() {
+  const container = document.getElementById('payment-methods-container');
+  if (!container) return;
+
+  const methods = [
+    {
+      id: 'islamic',
+      key: 'islamic',
+      title: 'البنك الإسلامي الفلسطيني',
+      styleClass: 'pay-islamic',
+      logo: 'image/islamicBankLogo.png',
+      logoAlt: 'شعار البنك الإسلامي الفلسطيني',
+      detailLines: [
+        { label: 'رقم الحساب:', value: BANK_INFO.islamic_account || 'XXXX-XXXX-XXXX-XXXX' },
+        { label: 'IBAN:', value: BANK_INFO.islamic_iban || 'PS92XXXXXXXXXXXXXXXXXXXX' },
+        { label: 'اسم الحساب:', value: BANK_INFO.islamic_name || 'يارا' }
+      ]
+    },
+    {
+      id: 'palestine',
+      key: 'palestine',
+      title: 'محفظة فلسطين',
+      styleClass: 'pay-mahfaza',
+      logo: 'image/mahfazaLogo.png',
+      logoAlt: 'شعار محفظة فلسطين',
+      detailLines: [
+        { label: 'الرقم:', value: BANK_INFO.palestine_wallet || '05X-XXX-XXXX' },
+        { label: 'اسم المحفظة:', value: BANK_INFO.palestine_name || 'يارا' }
+      ]
+    },
+    {
+      id: 'pal-bank',
+      key: 'palBank',
+      title: 'تحويل بنك فلسطين',
+      styleClass: 'pay-pal-bank',
+      logo: 'image/bankLogo.png',
+      logoAlt: 'شعار بنك فلسطين',
+      detailLines: [
+        { label: 'رقم الحساب:', value: BANK_INFO.pal_bank_account || 'XXXX-XXXX-XXXX' },
+        { label: 'IBAN:', value: BANK_INFO.pal_bank_iban || 'PS92XXXXXXXXXXXXXXXXXXXX' },
+        { label: 'اسم الحساب:', value: BANK_INFO.pal_bank_name || 'يارا' }
+      ]
+    }
+  ];
+
+  const visible = methods.filter(method => state.paymentVisibility[method.key]);
+  if (!visible.length) {
+    container.innerHTML = '<div class="payment-empty">لا توجد طرق دفع مفعلة حالياً. يرجى اختيار طريقة دفع أخرى أو التواصل مع الإدارة.</div>';
+    return;
+  }
+
+  container.innerHTML = visible.map(method => `
+    <div class="pay-method ${method.styleClass}" id="pm-${method.id}" data-method="${method.id}" onclick="selectPayment('${method.id}')">
+      <div class="pay-method-header">
+        <div class="pay-header-main">
+          ${method.logo ? `<img src="${method.logo}" class="pay-logo-img" alt="${method.logoAlt}">` : ''}
+          <span class="pay-name">${method.title}</span>
+        </div>
+        <div class="pay-radio"><div class="pay-radio-dot"></div></div>
+      </div>
+      <div class="pay-details-wrap">
+        ${method.detailLines.map((line, idx) => `
+          <div class="pay-detail">
+            <span class="pay-lbl">${line.label}</span>
+            <span class="pay-val" id="${method.id}-${idx}">${line.value}</span>
+            <button type="button" class="copy-btn" onclick="event.stopPropagation(); copyText('${method.id}-${idx}')">نسخ</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>`).join('');
+
+  if (state.selectedPayment && !state.paymentVisibility[state.selectedPayment]) {
+    state.selectedPayment = null;
+  }
+  if (state.selectedPayment) selectPayment(state.selectedPayment);
+}
+
 // ===== RENDER PRODUCTS =====
+function isProductVisible(p) {
+  if (!p.publishAt) return true;
+  const now = new Date();
+  const publish = new Date(p.publishAt);
+  return publish <= now;
+}
+
 function renderProducts(filter) {
   if (filter !== undefined) state.currentCategory = filter;
   const cat = state.currentCategory;
+  renderCategoryNavigation();
 
-  let filtered = cat === "الكل"
+  let filtered = (cat === "الكل"
     ? state.products
-    : state.products.filter(p => p.category === cat);
+    : state.products.filter(p => p.category === cat)
+  ).filter(isProductVisible);
 
   const grid  = document.getElementById("products-grid");
   const label = document.getElementById("products-label");
@@ -175,6 +300,9 @@ function renderProducts(filter) {
   grid.innerHTML = filtered.map((p, i) => productCardHTML(p, i)).join("");
 }
 
+// ===== COLLECTIONS CAROUSEL =====
+ 
+
 function productCardHTML(p, idx) {
   const wished   = state.wishlist.includes(p.id);
   const hasDis   = p.originalPrice > p.price && p.originalPrice > 0;
@@ -185,6 +313,14 @@ function productCardHTML(p, idx) {
 
   const allImgs    = (p.images && p.images.length > 0) ? p.images : (p.image ? [p.image] : []);
   const hasMultiple = allImgs.length > 1;
+  const manualLabel   = p.label ? String(p.label).trim() : '';
+  const labelClass    = manualLabel === 'جديد'
+    ? 'new'
+    : (manualLabel === 'عرض خاص' ? 'special' : 'custom');
+  const isLastPiece   = p.quantity === 1 && p.inStock !== false;
+  const collectionBadge = p.collectionLabel
+    ? `<div class="product-collection-tag">${p.collectionLabel}</div>`
+    : (p.collectionName ? `<div class="product-collection-tag">${p.collectionName}</div>` : '');
 
   let imgContent;
   if (allImgs.length === 0) {
@@ -199,8 +335,8 @@ function productCardHTML(p, idx) {
              <img src="${img}" alt="${p.name}" loading="lazy">
            </div>`
         ).join("")}
-        <button class="card-arr card-prev" onclick="event.stopPropagation(); slideCard(${id},-1)" aria-label="السابق">&#8250;</button>
-        <button class="card-arr card-next" onclick="event.stopPropagation(); slideCard(${id}, 1)" aria-label="التالي">&#8249;</button>
+        <button class="card-arr card-prev" onclick="event.stopPropagation(); slideCard(${JSON.stringify(id)},-1)" aria-label="السابق">&#8250;</button>
+        <button class="card-arr card-next" onclick="event.stopPropagation(); slideCard(${JSON.stringify(id)}, 1)" aria-label="التالي">&#8249;</button>
         <div class="card-dots">
           ${allImgs.map((_, i) =>
             `<div class="card-dot${i === 0 ? " active" : ""}" onclick="event.stopPropagation(); goToSlide(${id},${i})"></div>`
@@ -211,16 +347,21 @@ function productCardHTML(p, idx) {
 
   return `
     <div class="product-card" data-id="${id}" data-price="${p.price}" data-idx="${idx}"
-         onclick="openProductModal(${id})">
+         onclick="openProductModal(${JSON.stringify(id)})">
       <div class="product-img-wrap">
         ${imgContent}
+        <div class="product-badges">
+          ${manualLabel ? `<span class="product-badge ${labelClass}">${manualLabel}</span>` : ""}
+          ${isLastPiece ? `<span class="product-badge last-piece">آخر قطعة</span>` : ""}
+        </div>
         ${hasDis ? `<div class="sale-badge">خصم ${disc}٪</div>` : ""}
         ${isOut  ? `<div class="out-of-stock-overlay">نفذ المخزون</div>` : ""}
-        <button class="wish-btn" onclick="event.stopPropagation(); toggleWishlist(${id})"
+        <button class="wish-btn" onclick="event.stopPropagation(); toggleWishlist(${JSON.stringify(id)})"
                 aria-label="مفضلة">${wished ? "❤️" : "🤍"}</button>
       </div>
       <div class="product-info">
         <div class="product-cat-tag">${p.category || ""}</div>
+        ${collectionBadge}
         <div class="product-name">${p.name}</div>
         <div class="product-rating">
           <span class="stars-sm">${stars}</span>
@@ -232,8 +373,8 @@ function productCardHTML(p, idx) {
           ${hasDis ? `<span class="price-save">وفري ${disc}٪</span>` : ""}
         </div>
       </div>
-      <button class="product-add-btn"
-              onclick="event.stopPropagation(); openProductModal(${id})">
+        <button class="product-add-btn"
+          onclick="event.stopPropagation(); openProductModal(${JSON.stringify(id)})">
         🛒 أضف للسلة
       </button>
     </div>`;
@@ -354,7 +495,6 @@ function openProductModal(id) {
   }
 
   state.currentProduct.qty = 1;
-  document.getElementById("modal-qty").textContent = "1";
 
   const wishBtn = document.getElementById("modal-wish-btn");
   wishBtn.classList.toggle("active", wished);
@@ -379,12 +519,6 @@ function selectSize(btn, size) {
   document.querySelectorAll("#modal-sizes .size-chip").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
   if (state.currentProduct) state.currentProduct.selectedSize = size;
-}
-
-function changeQty(delta) {
-  if (!state.currentProduct) return;
-  state.currentProduct.qty = Math.max(1, state.currentProduct.qty + delta);
-  document.getElementById("modal-qty").textContent = state.currentProduct.qty;
 }
 
 // ===== SIZE CHART =====
@@ -451,18 +585,19 @@ function addToCart() {
   const existing = state.cart.find(i => i.key === key);
 
   if (existing) {
-    existing.qty += p.qty;
-  } else {
-    state.cart.push({
-      key,
-      id: p.id,
-      name: p.name,
-      price: p.price,
-      image: p.image || "",
-      size: p.selectedSize || "",
-      qty: p.qty
-    });
+    showToast("⚠️ هذا المنتج موجود بالفعل في السلة");
+    return;
   }
+
+  state.cart.push({
+    key,
+    id: p.id,
+    name: p.name,
+    price: p.price,
+    image: p.image || "",
+    size: p.selectedSize || "",
+    qty: 1
+  });
 
   saveCart();
   updateCartBadge();
@@ -518,11 +653,7 @@ function renderCart() {
           <div class="cart-item-price">₪ ${(item.price * item.qty)}</div>
         </div>
         <div class="cart-item-right">
-          <div class="cart-qty">
-            <button onclick="updateQty('${item.key}', -1)">−</button>
-            <span>${item.qty}</span>
-            <button onclick="updateQty('${item.key}', 1)">+</button>
-          </div>
+          <div class="cart-item-count">${item.qty} قطعة</div>
           <button class="remove-btn" onclick="removeItem('${item.key}')">حذف</button>
         </div>
       </div>`;
@@ -537,15 +668,10 @@ function calcSubtotal() {
   return state.cart.reduce((s, i) => s + i.price * i.qty, 0);
 }
 
-function updateQty(key, delta) {
-  const item = state.cart.find(i => i.key === key);
-  if (!item) return;
-  item.qty += delta;
-  if (item.qty <= 0) state.cart = state.cart.filter(i => i.key !== key);
-  saveCart();
-  updateCartBadge();
-  renderCart();
-}
+// removed: updateQty(key, delta)
+// This helper was unused in the UI and could cause accidental quantity changes.
+// Keep quantity changes via admin only; customers add a product once. If you
+// later want to re-enable client-side qty controls, restore this function.
 
 function removeItem(key) {
   state.cart = state.cart.filter(i => i.key !== key);
