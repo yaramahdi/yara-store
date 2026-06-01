@@ -1513,6 +1513,13 @@
           <input type="number" id="f-reviews" placeholder="0" min="0" value="0">
         </div>
 
+        <!-- Quantity -->
+        <div class="form-field">
+          <label>الكمية المتاحة *</label>
+          <input type="number" id="f-quantity" placeholder="0" min="0" value="1">
+          <div class="price-hint">عندما تصبح الكمية 1 وتتحجز، سيظهر "آخر قطعة"</div>
+        </div>
+
         <!-- Stock toggle -->
         <div class="form-field">
           <label>حالة المخزون</label>
@@ -1856,6 +1863,7 @@ function openProductModal(id) {
   document.getElementById('f-publish-at').value        = '';
   document.getElementById('f-price').value             = '';
   document.getElementById('f-original-price').value    = '';
+  document.getElementById('f-quantity').value          = '1';
   document.getElementById('f-description').value       = '';
   document.getElementById('f-label').value             = '';
   document.getElementById('f-label-suggest').value     = '';
@@ -1882,6 +1890,7 @@ function openProductModal(id) {
       document.getElementById('f-publish-at').value        = p.publishAt ? toLocalDateTime(p.publishAt) : '';
       document.getElementById('f-price').value             = p.price || '';
       document.getElementById('f-original-price').value    = p.originalPrice > 0 ? p.originalPrice : '';
+      document.getElementById('f-quantity').value          = p.quantity || '1';
       document.getElementById('f-description').value       = p.description || '';
       document.getElementById('f-label').value             = p.label || '';
       document.getElementById('f-rating').value            = p.rating || '4.9';
@@ -2024,11 +2033,13 @@ async function saveProduct() {
   const category      = document.getElementById('f-category').value;
   const price         = parseFloat(document.getElementById('f-price').value);
   const originalPrice = parseFloat(document.getElementById('f-original-price').value) || 0;
+  const quantity      = parseInt(document.getElementById('f-quantity').value) || 0;
 
   if (!name)                                    { toast('⚠️ أدخلي اسم المنتج'); return; }
   if (!category)                                { toast('⚠️ اختاري الفئة'); return; }
   if (!price || price <= 0)                     { toast('⚠️ أدخلي سعراً صحيحاً'); return; }
   if (originalPrice > 0 && originalPrice <= price) { toast('⚠️ السعر الأصلي يجب أن يكون أكبر من سعر البيع'); return; }
+  if (quantity < 0)                             { toast('⚠️ الكمية لا يمكن أن تكون سالبة'); return; }
 
   const images   = currentImages.map(i => i.url);
   const publishAtValue = document.getElementById('f-publish-at').value;
@@ -2042,6 +2053,7 @@ async function saveProduct() {
     price,
     originalPrice: originalPrice || 0,
     discount:      (originalPrice > price && originalPrice > 0) ? Math.round((1 - price / originalPrice) * 100) : 0,
+    quantity:      quantity,
     sizes:         getSelectedSizes(),
     sizeChart:     _prodChart.filter(r => r.size.trim() || r.details.trim()),
     description:   document.getElementById('f-description').value.trim(),

@@ -2,11 +2,11 @@
 let WHATSAPP_NUMBER = "970566707278";
 
 let BANK_INFO = {
-  islamic_account:  "XXXX-XXXX-XXXX-XXXX",
-  islamic_iban:     "PS10PIBC083120568270033132000",
-  islamic_name:     "يارا",
-  palestine_wallet: "05X-XXX-XXXX",
-  palestine_name:   "يارا",
+  islamic_account:  "2065173",
+  islamic_iban:     "PS53PIBC083120651730033132000",
+  islamic_name:     "يارا حاتم جواد مهدي",
+  palestine_wallet: "0597479675",
+  palestine_name:   "يارا حاتم جواد مهدي",
   pal_bank_account: "XXXX-XXXX-XXXX-XXXX",
   pal_bank_iban:    "PS92XXXXXXXXXXXXXXXXXXXX",
   pal_bank_name:    "يارا"
@@ -148,8 +148,8 @@ async function loadBankInfo() {
   const piban   = document.getElementById("palestine-iban");
   const pbname  = document.getElementById("pal-bank-name");
   if (ia)     ia.textContent     = BANK_INFO.islamic_account;
-  if (iiban)  iiban.textContent  = BANK_INFO.islamic_iban    || "PS92XXXXXXXXXXXXXXXXXXXX";
-  if (iname)  iname.textContent  = BANK_INFO.islamic_name    || "يارا";
+  if (iiban)  iiban.textContent  = BANK_INFO.islamic_iban    || "PS53PIBC083120651730033132000";
+  if (iname)  iname.textContent  = BANK_INFO.islamic_name    || "يارا حاتم جواد مهدي";
   if (pw)     pw.textContent     = BANK_INFO.palestine_wallet;
   if (pname)  pname.textContent  = BANK_INFO.palestine_name  || "يارا";
   if (pa)     pa.textContent     = BANK_INFO.pal_bank_account || "XXXX-XXXX-XXXX";
@@ -199,9 +199,9 @@ function renderPaymentMethods() {
       logo: 'image/islamicBankLogo.png',
       logoAlt: 'شعار البنك الإسلامي الفلسطيني',
       detailLines: [
-        { label: 'رقم الحساب:', value: BANK_INFO.islamic_account || 'XXXX-XXXX-XXXX-XXXX' },
-        { label: 'IBAN:', value: BANK_INFO.islamic_iban || 'PS92XXXXXXXXXXXXXXXXXXXX' },
-        { label: 'اسم الحساب:', value: BANK_INFO.islamic_name || 'يارا' }
+        { label: 'رقم الحساب:', value: BANK_INFO.islamic_account || '2065173' },
+        { label: 'IBAN:', value: BANK_INFO.islamic_iban || 'PS53PIBC083120651730033132000' },
+        { label: 'اسم الحساب:', value: BANK_INFO.islamic_name || 'يارا حاتم جواد مهدي' }
       ]
     },
     {
@@ -212,8 +212,8 @@ function renderPaymentMethods() {
       logo: 'image/mahfazaLogo.png',
       logoAlt: 'شعار محفظة فلسطين',
       detailLines: [
-        { label: 'الرقم:', value: BANK_INFO.palestine_wallet || '05X-XXX-XXXX' },
-        { label: 'اسم المحفظة:', value: BANK_INFO.palestine_name || 'يارا' }
+        { label: 'الرقم:', value: BANK_INFO.palestine_wallet || '0597479675' },
+        { label: 'اسم المحفظة:', value: BANK_INFO.palestine_name || 'يارا حاتم جواد مهدي' }
       ]
     },
     {
@@ -291,7 +291,7 @@ function renderProducts(filter) {
 
   if (filtered.length === 0) {
     const msg = state.products.length === 0
-      ? '<p>لا يوجد منتجات بعد — ترقّبي وصول المجموعة الجديدة قريباً ✨</p>'
+      ? '<p>لا يوجد منتجات بعد — ترقّبي وصول المجموعة الجديدة قريباً </p>'
       : '<p>لا يوجد منتجات في هذه الفئة حالياً</p><small>جربي فئة أخرى أو عودي لاحقاً</small>';
     grid.innerHTML = `<div class="no-products"><div class="no-icon">🔍</div>${msg}</div>`;
     return;
@@ -819,6 +819,27 @@ async function bookOrder() {
   const info = state.customerInfo;
   if (!info) return;
 
+  // ✓ فحص الكميات من Firestore مباشرة قبل الطلب
+  try {
+    for (const cartItem of state.cart) {
+      const prodDoc = await db.collection('products').doc(String(cartItem.id)).get();
+      if (!prodDoc.exists) {
+        showToast("⚠️ المنتج غير متاح");
+        return;
+      }
+      const prodData = prodDoc.data();
+      const available = prodData.quantity || 0;
+      if (available < cartItem.qty) {
+          showToast("⚠️ للاسف تم نفاذ المخزون، ربما قامت زبونة بحجزه للتو");
+        return;
+      }
+    }
+  } catch (e) {
+    console.error('خطأ في التحقق من الكميات:', e);
+    showToast("⚠️ خطأ في التحقق من الكميات");
+    return;
+  }
+
   const total = calcSubtotal();
 
   const order = {
@@ -884,9 +905,8 @@ function sendToWhatsApp(order) {
     `\n🛒 *المنتجات*\n` +
     `${itemsList}\n\n` +
     `✅ *الإجمالي: ₪${order.total}*\n\n` +
-    `💳 طريقة الدفع: ${payText}\n\n` +
-    `━━━━━━━━━━━━━━━\n` +
-    `شكراً لطلبك! سيتم التواصل معك قريباً ❤️`;
+    `💳 طريقة الدفع: ${payText}\n\n` 
+    ;
 
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   window.location.href = url;
