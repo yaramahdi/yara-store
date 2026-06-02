@@ -352,8 +352,8 @@ function productCardHTML(p, idx) {
         ${imgContent}
         <div class="product-badges">
           ${manualLabel ? `<span class="product-badge ${labelClass}">${manualLabel}</span>` : ""}
-          ${isLastPiece ? `<span class="product-badge last-piece">آخر قطعة</span>` : ""}
         </div>
+        ${isLastPiece ? `<div class="last-piece-ribbon">آخر قطعة</div>` : ""}
         ${hasDis ? `<div class="sale-badge">خصم ${disc}٪</div>` : ""}
         ${isOut  ? `<div class="out-of-stock-overlay">نفذ المخزون</div>` : ""}
         <button class="wish-btn" onclick="event.stopPropagation(); toggleWishlist(${JSON.stringify(id)})"
@@ -877,6 +877,7 @@ async function bookOrder() {
   saveCart();
   updateCartBadge();
   closeCheckout();
+  renderProducts();
 
   showToast("✓ تم حجز طلبك! سيتم تحويلك لواتساب...");
   setTimeout(() => sendToWhatsApp(order), 900);
@@ -893,20 +894,30 @@ function sendToWhatsApp(order) {
     `• ${i.name}${i.size ? ` (${i.size})` : ""} × ${i.qty} ← ₪${i.price * i.qty}`
   ).join("\n");
 
+  const ic = {
+    bag:    '\u{1F6D2}', // 🛒
+    person: '\u{1F464}', // 👤
+    box:    '\u{1F4E6}', // 📦
+    check:  '✅',    // ✅
+    card:   '\u{1F4B3}', // 💳
+    heart:  '\u{1F49A}', // 💚
+  };
+
   const msg =
-    `🛍️ *طلب جديد - متجر يارا*\n` +
+    `${ic.bag} *طلب جديد - متجر يارا*\n` +
     `رقم الطلب: #${String(order.id).slice(-6)}\n` +
-    `━━━━━━━━━━━━━━━\n\n` +
-    `👤 *بيانات الزبونة*\n` +
+    `--------------------\n\n` +
+    `${ic.person} *بيانات الزبونة*\n` +
     `الاسم: ${info.name}\n` +
     `الهاتف: ${info.phone}\n` +
     `العنوان: ${info.address}\n` +
     (info.notes ? `ملاحظات: ${info.notes}\n` : "") +
-    `\n🛒 *المنتجات*\n` +
+    `\n${ic.box} *المنتجات*\n` +
     `${itemsList}\n\n` +
-    `✅ *الإجمالي: ₪${order.total}*\n\n` +
-    `💳 طريقة الدفع: ${payText}\n\n` 
-    ;
+    `--------------------\n` +
+    `${ic.check} *الإجمالي: ₪${order.total}*\n` +
+    `${ic.card} طريقة الدفع: ${payText}\n\n` +
+    `شكراً لطلبك! سيتم التواصل معك قريباً ${ic.heart}`;
 
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   window.location.href = url;
