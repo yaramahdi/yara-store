@@ -16,11 +16,6 @@
 <body>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
-<!--  ANNOUNCEMENT BAR                                             -->
-<!-- ══════════════════════════════════════════════════════════════ -->
-
-
-<!-- ══════════════════════════════════════════════════════════════ -->
 <!--  HEADER                                                       -->
 <!-- ══════════════════════════════════════════════════════════════ -->
 <header>
@@ -114,6 +109,11 @@
     </div>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!--  COLLECTION ANNOUNCEMENT BANNER                               -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="collection-banner" style="display:none"></div>
 
 <!-- ══════════════════════════════════════════════════════════════ -->
 <!--  CATEGORIES                                                   -->
@@ -246,6 +246,14 @@
         <span class="modal-price-now" id="modal-price-now">₪ 0</span>
         <span class="modal-price-was" id="modal-price-was" style="display:none"></span>
         <span class="modal-disc-tag" id="modal-disc-tag" style="display:none"></span>
+      </div>
+
+      <!-- Colors -->
+      <div id="colors-section" style="display:none">
+        <div class="section-label-sm">
+          <span>اللون: <span id="modal-color-name" class="color-name-val"></span></span>
+        </div>
+        <div class="color-swatches" id="modal-colors"></div>
       </div>
 
       <!-- Sizes -->

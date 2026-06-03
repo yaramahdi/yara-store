@@ -30,7 +30,9 @@ let state = {
     palestine: true,
     palBank: true
   },
-  catImages: {}
+  catImages: {},
+  collections: [],
+  activeCollection: null
 };
 
 // ===== INIT =====
@@ -64,27 +66,46 @@ async function init() {
   renderProducts();
 }
 
-async function loadProducts() {
-  const grid = document.getElementById("products-grid");
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const snap = await db.collection('products').get();
-      state.products = snap.docs.map(doc => doc.data());
-      return;
-    } catch (e) {
-      if (attempt < 3) {
-        if (grid) grid.innerHTML = `<style>@keyframes _yspin{to{transform:rotate(360deg)}}</style>
-          <div style="grid-column:1/-1;text-align:center;padding:80px 20px">
-            <div style="width:44px;height:44px;border:4px solid #f0d8e5;border-top-color:#B5547A;border-radius:50%;animation:_yspin .8s linear infinite;margin:0 auto 16px"></div>
-            <div style="color:#aaa;font-size:14px">جاري إعادة الاتصال... (محاولة ${attempt + 1} من 3)</div>
-          </div>`;
-        await new Promise(r => setTimeout(r, 4000));
-      } else {
-        state.products = [];
-        state.productsLoadError = true;
+function loadProducts() {
+  return new Promise(resolve => {
+    let initialLoad = true;
+
+    // إذا لم يرد الـ snapshot خلال 9 ثوانٍ → نعرض زر الإعادة
+    const failTimer = setTimeout(() => {
+      if (!initialLoad) return;
+      initialLoad = false;
+      state.productsLoadError = true;
+      resolve();
+    }, 9000);
+
+    db.collection('products').onSnapshot(
+      snap => {
+        // نتجاهل snapshot فارغ من الكاش أثناء الانتظار
+        if (initialLoad && snap.metadata.fromCache && snap.docs.length === 0) return;
+
+        clearTimeout(failTimer);
+        state.products = snap.docs.map(doc => doc.data());
+
+        if (initialLoad) {
+          initialLoad = false;
+          resolve();
+        } else {
+          renderProducts();
+          renderCollectionBanner();
+        }
+      },
+      err => {
+        clearTimeout(failTimer);
+        console.error(err);
+        if (initialLoad) {
+          initialLoad = false;
+          state.products = [];
+          state.productsLoadError = true;
+          resolve();
+        }
       }
-    }
-  }
+    );
+  });
 }
 
 function loadCart() {
@@ -126,9 +147,8 @@ async function loadBankInfo() {
         state.catImages = { ...data.catImages };
       }
 
-      if (data.announce) {
-        const bar = document.querySelector(".announce-bar");
-        if (bar) bar.innerHTML = data.announce;
+      if (Array.isArray(data.collections)) {
+        state.collections = data.collections;
       }
     }
   } catch (e) {
@@ -136,6 +156,7 @@ async function loadBankInfo() {
   }
 
   renderCategoryNavigation();
+  renderCollectionBanner();
   renderFooterCategoryLinks();
   renderPaymentMethods();
 
@@ -207,7 +228,7 @@ function renderPaymentMethods() {
     {
       id: 'palestine',
       key: 'palestine',
-      title: 'محفظة فلسطين',
+      title: 'محفظة بال بي',
       styleClass: 'pay-mahfaza',
       logo: 'image/mahfazaLogo.png',
       logoAlt: 'شعار محفظة فلسطين',
@@ -272,21 +293,33 @@ function isProductVisible(p) {
 }
 
 function renderProducts(filter) {
-  if (filter !== undefined) state.currentCategory = filter;
+  if (filter !== undefined) {
+    state.currentCategory = filter;
+    state.activeCollection = null;
+  }
   const cat = state.currentCategory;
   renderCategoryNavigation();
 
   let filtered = (cat === "الكل"
     ? state.products
     : state.products.filter(p => p.category === cat)
-  ).filter(isProductVisible);
+  ).filter(isProductVisible)
+   .sort((a, b) => b.id - a.id);
+
+  if (state.activeCollection) {
+    filtered = filtered.filter(p => p.collectionName === state.activeCollection);
+  }
 
   const grid  = document.getElementById("products-grid");
   const label = document.getElementById("products-label");
 
   if (label) {
     const count = filtered.length;
-    label.textContent = cat === "الكل" ? `جميع المنتجات (${count})` : `${cat} (${count})`;
+    if (state.activeCollection) {
+      label.innerHTML = `كولكشن: ${state.activeCollection} (${count}) <button class="collection-clear-btn" onclick="clearCollectionFilter()">✕ عرض الكل</button>`;
+    } else {
+      label.textContent = cat === "الكل" ? `جميع المنتجات (${count})` : `${cat} (${count})`;
+    }
   }
 
   if (filtered.length === 0) {
@@ -300,8 +333,61 @@ function renderProducts(filter) {
   grid.innerHTML = filtered.map((p, i) => productCardHTML(p, i)).join("");
 }
 
-// ===== COLLECTIONS CAROUSEL =====
- 
+// ===== COLLECTION BANNER =====
+function renderCollectionBanner() {
+  const banner = document.getElementById('collection-banner');
+  if (!banner) return;
+
+  const active = (state.collections || [])
+    .filter(c => c.showBanner)
+    .sort((a, b) => new Date(b.releaseAt) - new Date(a.releaseAt))[0];
+
+  if (!active) { banner.style.display = 'none'; return; }
+  banner.style.display = '';
+
+  if (banner._interval) clearInterval(banner._interval);
+
+  function tick() {
+    const diff = new Date(active.releaseAt) - new Date();
+    if (diff > 0) {
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      const timeStr = [h > 0 ? `${h}س` : '', `${m}د`, `${s}ث`].filter(Boolean).join(' ');
+      banner.innerHTML = `
+        <div class="collection-banner-inner">
+          <span class="banner-sparkle">✨</span>
+          <span>كولكشن <strong>${active.name}</strong> تصل خلال:</span>
+          <span class="banner-timer">${timeStr}</span>
+        </div>`;
+    } else {
+      clearInterval(banner._interval);
+      banner._interval = null;
+      const safeName = active.name.replace(/'/g, "\\'");
+      banner.innerHTML = `
+        <div class="collection-banner-inner released">
+          <span class="banner-sparkle">🎉</span>
+          <span>وصلت كولكشن <strong>${active.name}</strong> الآن!</span>
+          <button class="banner-view-btn" onclick="filterByCollection('${safeName}')">استعرضي الكولكشن ←</button>
+        </div>`;
+    }
+  }
+
+  tick();
+  banner._interval = setInterval(tick, 1000);
+}
+
+function filterByCollection(name) {
+  state.activeCollection = name;
+  state.currentCategory  = 'الكل';
+  renderProducts();
+  document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' });
+}
+
+function clearCollectionFilter() {
+  state.activeCollection = null;
+  renderProducts();
+}
 
 function productCardHTML(p, idx) {
   const wished   = state.wishlist.includes(p.id);
@@ -317,7 +403,7 @@ function productCardHTML(p, idx) {
   const labelClass    = manualLabel === 'جديد'
     ? 'new'
     : (manualLabel === 'عرض خاص' ? 'special' : 'custom');
-  const isLastPiece   = p.quantity === 1 && p.inStock !== false;
+  const isLastPiece   = p.quantity === 1 && p.inStock !== false && !p.hideLastPiece;
   const collectionBadge = p.collectionLabel
     ? `<div class="product-collection-tag">${p.collectionLabel}</div>`
     : (p.collectionName ? `<div class="product-collection-tag">${p.collectionName}</div>` : '');
@@ -354,15 +440,17 @@ function productCardHTML(p, idx) {
           ${manualLabel ? `<span class="product-badge ${labelClass}">${manualLabel}</span>` : ""}
         </div>
         ${isLastPiece ? `<div class="last-piece-ribbon">آخر قطعة</div>` : ""}
-        ${hasDis ? `<div class="sale-badge">خصم ${disc}٪</div>` : ""}
-        ${isOut  ? `<div class="out-of-stock-overlay">نفذ المخزون</div>` : ""}
-        <button class="wish-btn" onclick="event.stopPropagation(); toggleWishlist(${JSON.stringify(id)})"
-                aria-label="مفضلة">${wished ? "❤️" : "🤍"}</button>
+        ${hasDis ? `<div class="sale-badge${isLastPiece ? ' second' : ''}"></div>` : ""}
+        ${isOut  ? `<div class="out-of-stock-overlay">نفد المخزون</div>` : ""}
       </div>
       <div class="product-info">
         <div class="product-cat-tag">${p.category || ""}</div>
         ${collectionBadge}
-        <div class="product-name">${p.name}</div>
+        <div class="product-name-row">
+          <div class="product-name">${p.name}</div>
+          <button class="wish-btn" onclick="event.stopPropagation(); toggleWishlist(${JSON.stringify(id)})"
+                  aria-label="مفضلة">${wished ? "❤️" : "🤍"}</button>
+        </div>
         <div class="product-rating">
           <span class="stars-sm">${stars}</span>
           <span class="rating-count">(${p.reviews || 0})</span>
@@ -458,25 +546,31 @@ function openProductModal(id) {
 
   document.getElementById("modal-desc").textContent = p.description || "";
 
-  const mainImg = document.getElementById("modal-main-img");
-  if (p.image) {
-    mainImg.innerHTML = `<img src="${p.image}" alt="${p.name}">`;
-  } else {
-    mainImg.innerHTML = `<div class="img-ph">👗</div>`;
-  }
+  // ===== Linked colors + gallery =====
+  const linked    = Array.isArray(p.linkedColors) ? p.linkedColors.filter(c => c && c.productId) : [];
+  const colorSec  = document.getElementById("colors-section");
+  const colorWrap = document.getElementById("modal-colors");
+  const baseImgs  = (p.images && p.images.length) ? p.images : (p.image ? [p.image] : []);
+  renderModalGallery(baseImgs, p.name);
 
-  const thumbsEl = document.getElementById("modal-thumbs");
-  const allImgs  = (p.images && p.images.length) ? p.images : (p.image ? [p.image] : []);
-  if (allImgs.length > 1) {
-    thumbsEl.innerHTML = allImgs.map((img, i) =>
-      `<div class="thumb ${i === 0 ? "active" : ""}" onclick="switchImage('${img}', this)">
-        <img src="${img}" alt="">
-      </div>`
-    ).join("");
-  } else if (allImgs.length === 1) {
-    thumbsEl.innerHTML = `<div class="thumb active"><img src="${allImgs[0]}" alt=""></div>`;
+  if (linked.length && colorSec && colorWrap) {
+    colorSec.style.display = "";
+    const nameEl2 = document.getElementById("modal-color-name");
+    if (nameEl2) nameEl2.textContent = p.colorName || "";
+    const baseThumb = baseImgs[0] || "";
+    colorWrap.innerHTML =
+      `<button class="color-swatch active" title="${p.colorName || ''}">
+        <img src="${baseThumb}" alt="${p.colorName || ''}">
+      </button>` +
+      linked.map(c => {
+        const lp    = state.products.find(x => String(x.id) === String(c.productId));
+        const thumb = lp ? ((lp.images && lp.images.length ? lp.images[0] : lp.image) || "") : "";
+        return `<button class="color-swatch" onclick="switchToLinkedProduct('${c.productId}')" title="${c.name || ''}">
+          <img src="${thumb}" alt="${c.name || ''}">
+        </button>`;
+      }).join("");
   } else {
-    thumbsEl.innerHTML = "";
+    if (colorSec) colorSec.style.display = "none";
   }
 
   const sizeSec   = document.getElementById("sizes-section");
@@ -508,6 +602,31 @@ function switchImage(src, thumbEl) {
   document.getElementById("modal-main-img").innerHTML = `<img src="${src}" alt="">`;
   document.querySelectorAll("#modal-thumbs .thumb").forEach(t => t.classList.remove("active"));
   thumbEl.classList.add("active");
+}
+
+function renderModalGallery(imgs, name) {
+  const mainImg  = document.getElementById("modal-main-img");
+  const thumbsEl = document.getElementById("modal-thumbs");
+  if (!imgs || imgs.length === 0) {
+    mainImg.innerHTML  = `<div class="img-ph">👗</div>`;
+    thumbsEl.innerHTML = "";
+    return;
+  }
+  mainImg.innerHTML = `<img src="${imgs[0]}" alt="${name || ''}">`;
+  if (imgs.length > 1) {
+    thumbsEl.innerHTML = imgs.map((img, i) =>
+      `<div class="thumb ${i === 0 ? "active" : ""}" onclick="switchImage('${img}', this)">
+        <img src="${img}" alt="">
+      </div>`
+    ).join("");
+  } else {
+    thumbsEl.innerHTML = `<div class="thumb active"><img src="${imgs[0]}" alt=""></div>`;
+  }
+}
+
+function switchToLinkedProduct(productId) {
+  const p = state.products.find(x => String(x.id) === String(productId));
+  if (p) openProductModal(p.id);
 }
 
 function closeProductModal() {
@@ -594,8 +713,9 @@ function addToCart() {
     id: p.id,
     name: p.name,
     price: p.price,
-    image: p.image || "",
+    image: (p.images && p.images.length ? p.images[0] : p.image) || "",
     size: p.selectedSize || "",
+    color: p.colorName || "",
     qty: 1
   });
 
@@ -649,7 +769,7 @@ function renderCart() {
         <div class="cart-item-img">${imgTag}</div>
         <div class="cart-item-body">
           <div class="cart-item-name">${item.name}</div>
-          <div class="cart-item-meta">${item.size ? `المقاس: ${item.size}` : ""}</div>
+          <div class="cart-item-meta">${[item.size ? `المقاس: ${item.size}` : "", item.color ? `اللون: ${item.color}` : ""].filter(Boolean).join(" · ")}</div>
           <div class="cart-item-price">₪ ${(item.price * item.qty)}</div>
         </div>
         <div class="cart-item-right">
@@ -787,7 +907,7 @@ function renderInvoice() {
 
   document.getElementById("invoice-items-list").innerHTML = state.cart.map(item => `
     <tr>
-      <td class="inv-td-name">${item.name}</td>
+      <td class="inv-td-name">${item.name}${item.color ? ` <span style="color:#999;font-size:11px">- ${item.color}</span>` : ""}</td>
       <td class="inv-td-qty">× ${item.qty}${item.size ? ` (${item.size})` : ""}</td>
       <td class="inv-td-price">₪ ${item.price * item.qty}</td>
     </tr>`).join("");
@@ -887,40 +1007,35 @@ async function bookOrder() {
 function sendToWhatsApp(order) {
   if (!order) return;
   const info    = order.customer;
-  const payMap  = { islamic: "البنك الإسلامي الفلسطيني", palestine: "محفظة بنك فلسطين", "pal-bank": "تحويل بنك فلسطين" };
+  const payMap  = { islamic: "البنك الإسلامي الفلسطيني", palestine: "محفظة بال بي", "pal-bank": "تحويل بنك فلسطين" };
   const payText = payMap[order.paymentMethod] || "غير محدد";
 
   const itemsList = order.items.map(i =>
-    `• ${i.name}${i.size ? ` (${i.size})` : ""} × ${i.qty} ← ₪${i.price * i.qty}`
+    `• ${i.name}${i.size ? ` (${i.size})` : ""}${i.color ? ` - ${i.color}` : ""} × ${i.qty} ← ₪${i.price * i.qty}`
   ).join("\n");
 
-  const ic = {
-    bag:    '\u{1F6D2}', // 🛒
-    person: '\u{1F464}', // 👤
-    box:    '\u{1F4E6}', // 📦
-    check:  '✅',    // ✅
-    card:   '\u{1F4B3}', // 💳
-    heart:  '\u{1F49A}', // 💚
-  };
+  const bag   = String.fromCodePoint(0x1F6CD, 0xFE0F);
+  const who   = String.fromCodePoint(0x1F464);
+  const cart  = String.fromCodePoint(0x1F6D2);
+  const check = String.fromCodePoint(0x2705);
+  const card  = String.fromCodePoint(0x1F4B3);
+  const heart = String.fromCodePoint(0x2764, 0xFE0F);
 
   const msg =
-    `${ic.bag} *طلب جديد - متجر يارا*\n` +
-    `رقم الطلب: #${String(order.id).slice(-6)}\n` +
-    `--------------------\n\n` +
-    `${ic.person} *بيانات الزبونة*\n` +
+    `${bag} *طلب جديد - متجر يارا*\n` +
+    `رقم الطلب: #${String(order.id).slice(-6)}\n\n` +
+    `${who} *بيانات الزبونة*\n` +
     `الاسم: ${info.name}\n` +
     `الهاتف: ${info.phone}\n` +
     `العنوان: ${info.address}\n` +
     (info.notes ? `ملاحظات: ${info.notes}\n` : "") +
-    `\n${ic.box} *المنتجات*\n` +
+    `\n${cart} *المنتجات*\n` +
     `${itemsList}\n\n` +
-    `--------------------\n` +
-    `${ic.check} *الإجمالي: ₪${order.total}*\n` +
-    `${ic.card} طريقة الدفع: ${payText}\n\n` +
-    `شكراً لطلبك! سيتم التواصل معك قريباً ${ic.heart}`;
+    `${check} *الاجمالي: ${order.total} شيقل*\n` +
+    `${card} طريقة الدفع: ${payText}\n\n` +
+    `شكرا لطلبك ${heart}`;
 
-  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
-  window.location.href = url;
+  window.location.href = `https://api.whatsapp.com/send/?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(msg)}&type=phone_number&app_absent=0`;
 }
 
 // ===== TOAST =====

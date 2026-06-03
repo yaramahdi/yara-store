@@ -463,7 +463,7 @@
 
     .modal-body { padding: 24px; }
 
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
     .form-full { grid-column: 1/-1; }
 
     .form-field { margin-bottom: 0; }
@@ -655,6 +655,42 @@
       justify-content: center;
       font-weight: 700;
     }
+
+    /* Color variants */
+    .color-variant-row {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #fafafa;
+    }
+    .color-variant-head {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .color-variant-head input {
+      flex: 1;
+      padding: 9px 12px;
+      border: 1px solid var(--border-dark);
+      border-radius: 8px;
+      font-family: 'Cairo', sans-serif;
+      font-size: 13px;
+    }
+    .color-variant-del {
+      background: #fdeaea;
+      color: var(--danger);
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-family: 'Cairo', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .color-variant-del:hover { background: var(--danger); color: white; }
 
     /* Stock toggle */
     .toggle-switch {
@@ -1059,7 +1095,7 @@
       .admin-main { padding-bottom: 80px; }
       .stats-row { grid-template-columns: repeat(2, 1fr); }
       .settings-grid { grid-template-columns: 1fr; }
-      .form-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr 1fr; }
       .products-table { display: none; }
       .products-cards { display: flex; }
     }
@@ -1067,8 +1103,61 @@
     @media (max-width: 600px) {
       .admin-main { padding: 16px; }
       .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+      .form-grid { grid-template-columns: 1fr; }
       .modal-box { max-height: 100vh; }
       .modal-body { padding: 16px; }
+    }
+
+    /* ── COLLECTION FORM ── */
+    .col-product-card {
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+      background: white;
+    }
+    .col-prod-head {
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      background: var(--bg);
+      border-bottom: 1px solid transparent;
+      user-select: none;
+    }
+    .col-prod-head:hover { background: #ebebeb; }
+    .col-product-card.open .col-prod-head { border-bottom-color: var(--border); }
+    .col-prod-body { display: none; padding: 18px; }
+    .col-product-card.open .col-prod-body { display: block; }
+
+    .col-prod-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+    .col-prod-form-grid .form-full { grid-column: 1 / -1; }
+
+    .col-sizes-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+    .collection-list-card {
+      background: white;
+      border: 1px solid var(--border);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .collection-list-card-name { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+    .collection-list-card-meta { font-size: 12px; color: var(--text-mid); line-height: 1.7; }
+    .collection-list-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    @media (max-width: 900px) {
+      .col-prod-form-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
+      .col-prod-form-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -1127,6 +1216,9 @@
         </div>
         <div class="sidebar-link" onclick="showTab('password')" id="link-password">
           <span class="s-icon">🔐</span> تغيير المرور
+        </div>
+        <div class="sidebar-link" onclick="showTab('collections')" id="link-collections">
+          <span class="s-icon">✨</span> الكولكشنات
         </div>
       </div>
     </aside>
@@ -1276,7 +1368,7 @@
               <input type="text" id="set-islamic-name" placeholder="يارا">
             </div>
 
-            <div class="pay-section-title" style="margin-top:14px">محفظة بنك فلسطين</div>
+            <div class="pay-section-title" style="margin-top:14px">محفظة بال بي</div>
             <div class="field-group">
               <label class="toggle-switch" onclick="togglePaymentVisibility('palestine')">
                 <div class="toggle-track" id="track-show-palestine"><div class="toggle-knob"></div></div>
@@ -1327,15 +1419,6 @@
             <button class="save-btn" style="margin-top:12px" onclick="saveCategories()">💾 حفظ الفئات</button>
           </div>
 
-          <!-- Announcement -->
-          <div class="settings-card">
-            <h3>📢 شريط الإعلانات</h3>
-            <div class="field-group">
-              <label>نص الإعلان</label>
-              <textarea id="set-announce" rows="3" placeholder="✦ توصيل مجاني للطلبات فوق ٥٠ ₪"></textarea>
-            </div>
-            <button class="save-btn" onclick="saveAnnounce()">💾 حفظ الإعلان</button>
-          </div>
 
           <!-- Category Images — full width -->
           <div class="settings-card" style="grid-column:1/-1">
@@ -1372,6 +1455,76 @@
         </div>
       </div>
 
+      <!-- ── COLLECTIONS TAB ── -->
+      <div class="admin-tab" id="tab-collections">
+
+        <!-- LIST VIEW -->
+        <div id="collections-list-view">
+          <div class="section-header">
+            <h2>✨ الكولكشنات</h2>
+            <button class="add-btn" onclick="openCollectionForm()">✨ إضافة كولكشن جديدة</button>
+          </div>
+          <div id="collections-list">
+            <div style="background:white;border:1px solid var(--border);padding:60px 20px;text-align:center;color:var(--text-light)">
+              <div style="font-size:40px;margin-bottom:12px">✨</div>
+              <p style="font-size:15px;font-weight:600">لا توجد كولكشنات بعد — أضيفي أول كولكشن!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- FORM VIEW (hidden) -->
+        <div id="collection-form-view" style="display:none">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+            <button class="cancel-btn" onclick="cancelCollectionForm()">← العودة</button>
+            <h2 id="col-form-title" style="font-size:18px;font-weight:800">إضافة كولكشن جديدة</h2>
+          </div>
+
+          <!-- Collection metadata -->
+          <div class="settings-card" style="margin-bottom:20px">
+            <h3>✨ معلومات الكولكشن</h3>
+            <div class="form-grid">
+              <div class="form-field form-full">
+                <label>اسم الكولكشن *</label>
+                <input type="text" id="col-name" placeholder="مثال: كولكشن الصيف 2025" oninput="collectionDraft.name=this.value">
+              </div>
+              <div class="form-field">
+                <label>موعد ظهور الكولكشن للجمهور *</label>
+                <input type="datetime-local" id="col-release" oninput="collectionDraft.releaseAt=this.value">
+                <div class="price-hint">ستُخفى المنتجات حتى هذا الوقت، ثم تظهر تلقائياً.</div>
+              </div>
+              <div class="form-field">
+                <label>شريط إعلان الكولكشن</label>
+                <label class="toggle-switch" onclick="toggleColBanner()">
+                  <div class="toggle-track on" id="col-banner-track"><div class="toggle-knob"></div></div>
+                  <span class="toggle-label" id="col-banner-label">مُفعَّل — سيظهر الشريط على الموقع</span>
+                </label>
+                <div class="price-hint">يمكنك تعطيله لاحقاً من قائمة الكولكشنات.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Products section -->
+          <div class="settings-card" style="margin-bottom:20px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+              <h3 style="margin-bottom:0;padding-bottom:0;border-bottom:none;font-size:15px">👗 منتجات الكولكشن</h3>
+              <button class="add-btn" onclick="addCollectionProduct()">+ إضافة منتج</button>
+            </div>
+            <div id="col-products-container">
+              <div style="text-align:center;color:var(--text-light);padding:30px;font-size:13px">
+                اضغطي "+ إضافة منتج" لبدء إضافة منتجات الكولكشن
+              </div>
+            </div>
+          </div>
+
+          <!-- Save/Cancel -->
+          <div style="display:flex;justify-content:flex-end;gap:12px;margin-bottom:40px">
+            <button class="cancel-btn" onclick="cancelCollectionForm()">إلغاء</button>
+            <button class="submit-btn" style="padding:12px 32px;font-size:14px" onclick="saveCollection()">💾 حفظ الكولكشن</button>
+          </div>
+        </div>
+
+      </div>
+
     </main>
   </div>
 </div>
@@ -1401,26 +1554,6 @@
           <select id="f-category">
             <option value="">-- اختاري الفئة --</option>
           </select>
-        </div>
-
-        <!-- Collection -->
-        <div class="form-field form-full">
-          <label>اسم الكولكشن (اختياري)</label>
-          <input type="text" id="f-collection-name" placeholder="مثال: كولكشن الصيف" />
-        </div>
-
-        <!-- Collection label -->
-        <div class="form-field form-full">
-          <label>ليبل الكولكشن (اختياري)</label>
-          <input type="text" id="f-collection-label" placeholder="مثال: جديد، حصري، إطلاق خاص" />
-          <div class="price-hint">إذا أعطيت المنتج كولكشن، يمكن استخدام نفس الاسم لعدة منتجات.</div>
-        </div>
-
-        <!-- Publish time -->
-        <div class="form-field form-full">
-          <label>موعد الظهور للجمهور (اختياري)</label>
-          <input type="datetime-local" id="f-publish-at" />
-          <div class="price-hint">سيبقى المنتج مخفيًا حتى الوقت المحدد.</div>
         </div>
 
         <!-- Price -->
@@ -1543,6 +1676,19 @@
           <div class="img-previews" id="img-previews"></div>
         </div>
 
+        <!-- Color name + linked colors -->
+        <div class="form-field">
+          <label>لون هذا المنتج (اختياري)</label>
+          <input type="text" id="f-color-name" placeholder="مثال: بني، أسود، أحمر...">
+        </div>
+
+        <div class="form-field form-full">
+          <label>ألوان أخرى (اختياري)</label>
+          <div class="price-hint" style="margin-bottom:10px">اربطي هذا المنتج بمنتجات أخرى تمثل ألوانه البديلة. ستظهر للزبونة كأزرار ألوان داخل صفحة المنتج.</div>
+          <div id="linked-colors"></div>
+          <button type="button" class="add-size-btn" style="margin-top:6px" onclick="addLinkedColor()">+ إضافة لون آخر</button>
+        </div>
+
       </div>
     </div>
 
@@ -1588,6 +1734,9 @@
     <button class="mobile-nav-btn" id="mnav-password" onclick="showTab('password')">
       <span class="mn-icon">🔐</span> المرور
     </button>
+    <button class="mobile-nav-btn" id="mnav-collections" onclick="showTab('collections')">
+      <span class="mn-icon">✨</span> كولكشن
+    </button>
   </div>
 </nav>
 
@@ -1601,6 +1750,7 @@
 const DEFAULT_PASS = 'yara2024';
 let editingId       = null;
 let currentImages   = [];
+let currentLinkedColors = [];
 let stockStatus     = true;
 let pendingDeleteId = null;
 let adminProducts   = [];
@@ -1609,6 +1759,13 @@ let adminCategories = [];
 let paymentVisibility = { islamic: true, palestine: true, palBank: true };
 let adminLoadError  = false;
 let currentOrderFilter = 'all';
+
+// Collections state
+let adminCollections       = [];
+let collectionDraft        = { name: '', releaseAt: '', showBanner: true };
+let collectionProductDrafts = [];
+let editingCollectionId    = null;
+let _colBannerEnabled      = true;
 
 const adminSessionStart = Date.now();
 let ordersUnsubscribe   = null;
@@ -1694,6 +1851,7 @@ document.addEventListener('click', () => {
 async function initDashboard() {
   await loadSettings();
   await Promise.all([loadAdminProducts(), loadCatImages(), loadAdminOrders()]);
+  await loadAdminCollections();
   renderProductsTable();
   renderOrders();
   startOrdersListener();
@@ -1784,7 +1942,10 @@ function renderProductsTable() {
 
     const sizeTags  = (p.sizes || []).map(s => `<span class="size-tag">${s}</span>`).join('');
     const qtyDisplay = p.quantity !== undefined
-      ? `<span style="font-size:12px;font-weight:700;color:${p.quantity <= 2 ? 'var(--danger)' : 'var(--success)'}">${p.quantity} قطعة</span>`
+      ? `<div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start">
+           <span style="font-size:12px;font-weight:700;color:${p.quantity <= 2 ? 'var(--danger)' : 'var(--success)'}">${p.quantity} قطعة</span>
+           ${p.quantity === 1 ? `<button onclick="toggleLastPiece(${p.id})" style="font-size:10px;padding:2px 8px;border-radius:10px;border:1px solid;cursor:pointer;font-family:'Cairo',sans-serif;font-weight:700;transition:all 0.15s;${p.hideLastPiece ? 'background:#fef0f0;color:var(--danger);border-color:#fecdd3' : 'background:#edfaf1;color:var(--success);border-color:#a7f3d0'}">${p.hideLastPiece ? '✗ مخفي' : '✓ آخر قطعة'}</button>` : ''}
+         </div>`
       : `<span style="font-size:12px;font-weight:700;color:var(--success)">قطعة واحدة</span>`;
 
     const stockBadge  = p.inStock !== false
@@ -1852,15 +2013,13 @@ function renderProductsTable() {
 //  PRODUCT MODAL
 // ═══════════════════════════════════════════════════════════════
 function openProductModal(id) {
-  editingId     = id || null;
-  currentImages = [];
-  stockStatus   = true;
+  editingId           = id || null;
+  currentImages       = [];
+  currentLinkedColors = [];
+  stockStatus         = true;
 
   document.getElementById('f-name').value              = '';
   document.getElementById('f-category').value          = '';
-  document.getElementById('f-collection-name').value   = '';
-  document.getElementById('f-collection-label').value  = '';
-  document.getElementById('f-publish-at').value        = '';
   document.getElementById('f-price').value             = '';
   document.getElementById('f-original-price').value    = '';
   document.getElementById('f-quantity').value          = '1';
@@ -1875,8 +2034,10 @@ function openProductModal(id) {
 
   document.querySelectorAll('.size-toggle').forEach(b => b.classList.remove('selected'));
   setStockUI(true);
+  document.getElementById('f-color-name').value = '';
   _prodChart = [];
   renderProdChart();
+  renderLinkedColors();
 
   document.getElementById('modal-title').textContent = id ? 'تعديل المنتج' : 'إضافة منتج جديد';
 
@@ -1885,9 +2046,6 @@ function openProductModal(id) {
     if (p) {
       document.getElementById('f-name').value              = p.name || '';
       document.getElementById('f-category').value          = p.category || '';
-      document.getElementById('f-collection-name').value   = p.collectionName || '';
-      document.getElementById('f-collection-label').value  = p.collectionLabel || '';
-      document.getElementById('f-publish-at').value        = p.publishAt ? toLocalDateTime(p.publishAt) : '';
       document.getElementById('f-price').value             = p.price || '';
       document.getElementById('f-original-price').value    = p.originalPrice > 0 ? p.originalPrice : '';
       document.getElementById('f-quantity').value          = p.quantity || '1';
@@ -1911,6 +2069,12 @@ function openProductModal(id) {
         renderImagePreviews();
       }
 
+      document.getElementById('f-color-name').value = p.colorName || '';
+      currentLinkedColors = Array.isArray(p.linkedColors)
+        ? p.linkedColors.map(c => ({ productId: String(c.productId || ''), name: c.name || '' }))
+        : [];
+      renderLinkedColors();
+
       _prodChart = JSON.parse(JSON.stringify(p.sizeChart || []));
       renderProdChart();
       updatePriceHint();
@@ -1922,8 +2086,9 @@ function openProductModal(id) {
 
 function closeProductModal() {
   document.getElementById('product-modal-backdrop').classList.remove('open');
-  editingId     = null;
-  currentImages = [];
+  editingId           = null;
+  currentImages       = [];
+  currentLinkedColors = [];
 }
 
 function toLocalDateTime(value) {
@@ -2028,6 +2193,40 @@ function removeImage(idx) {
   renderImagePreviews();
 }
 
+// ===== LINKED COLORS =====
+function addLinkedColor() {
+  currentLinkedColors.push({ productId: '', name: '' });
+  renderLinkedColors();
+}
+
+function removeLinkedColor(i) {
+  currentLinkedColors.splice(i, 1);
+  renderLinkedColors();
+}
+
+function updateLinkedColorField(i, field, value) {
+  if (currentLinkedColors[i]) currentLinkedColors[i][field] = value;
+}
+
+function renderLinkedColors() {
+  const wrap = document.getElementById('linked-colors');
+  if (!wrap) return;
+  const others = adminProducts.filter(p => p.id !== editingId);
+  wrap.innerHTML = currentLinkedColors.map((c, i) => `
+    <div class="color-variant-row" style="margin-bottom:8px">
+      <div class="color-variant-head">
+        <input type="text" placeholder="اسم اللون (مثال: أسود)" value="${(c.name || '').replace(/"/g, '&quot;')}"
+               oninput="updateLinkedColorField(${i}, 'name', this.value)" style="flex:1">
+        <select onchange="updateLinkedColorField(${i}, 'productId', this.value)"
+                style="flex:2;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;color:var(--text)">
+          <option value="">— اختاري المنتج —</option>
+          ${others.map(p => `<option value="${p.id}" ${String(p.id) === String(c.productId) ? 'selected' : ''}>${p.name}</option>`).join('')}
+        </select>
+        <button type="button" class="color-variant-del" onclick="removeLinkedColor(${i})">حذف</button>
+      </div>
+    </div>`).join('');
+}
+
 async function saveProduct() {
   const name          = document.getElementById('f-name').value.trim();
   const category      = document.getElementById('f-category').value;
@@ -2041,15 +2240,19 @@ async function saveProduct() {
   if (originalPrice > 0 && originalPrice <= price) { toast('⚠️ السعر الأصلي يجب أن يكون أكبر من سعر البيع'); return; }
   if (quantity < 0)                             { toast('⚠️ الكمية لا يمكن أن تكون سالبة'); return; }
 
-  const images   = currentImages.map(i => i.url);
-  const publishAtValue = document.getElementById('f-publish-at').value;
+  const images        = currentImages.map(i => i.url);
+  const colorName     = document.getElementById('f-color-name').value.trim();
+  const linkedColors  = currentLinkedColors
+    .filter(c => c.productId)
+    .map(c => ({ productId: String(c.productId), name: (c.name || '').trim() }));
+  const _existing = editingId ? adminProducts.find(p => p.id === editingId) : null;
   const product = {
     id:            editingId || Date.now(),
     name,
     category,
-    collectionName:  document.getElementById('f-collection-name').value.trim(),
-    collectionLabel: document.getElementById('f-collection-label').value.trim(),
-    publishAt:       publishAtValue ? new Date(publishAtValue).toISOString() : '',
+    collectionName:  _existing?.collectionName  || '',
+    collectionLabel: _existing?.collectionLabel || '',
+    publishAt:       _existing?.publishAt       || '',
     price,
     originalPrice: originalPrice || 0,
     discount:      (originalPrice > price && originalPrice > 0) ? Math.round((1 - price / originalPrice) * 100) : 0,
@@ -2063,6 +2266,8 @@ async function saveProduct() {
     inStock:       stockStatus,
     image:         images[0] || '',
     images:        images.length > 1 ? images : [],
+    colorName:     colorName,
+    linkedColors:  linkedColors,
     updatedAt:     Date.now()
   };
 
@@ -2078,6 +2283,18 @@ async function saveProduct() {
     console.error(e);
     toast('⚠️ خطأ في حفظ المنتج');
   }
+}
+
+async function toggleLastPiece(id) {
+  const p = adminProducts.find(x => x.id === id);
+  if (!p) return;
+  const newVal = !p.hideLastPiece;
+  try {
+    await db.collection('products').doc(String(id)).update({ hideLastPiece: newVal });
+    p.hideLastPiece = newVal;
+    renderProductsTable();
+    toast(newVal ? '✓ تم إخفاء ليبل "آخر قطعة"' : '✓ تم إظهار ليبل "آخر قطعة"');
+  } catch(e) { toast('⚠️ خطأ في التحديث'); }
 }
 
 async function toggleProductStock(id) {
@@ -2139,7 +2356,6 @@ async function loadSettings() {
     if (d.pal_bank_account) document.getElementById('set-pal-bank-account').value = d.pal_bank_account;
     if (d.pal_bank_iban)    document.getElementById('set-pal-bank-iban').value    = d.pal_bank_iban;
     if (d.pal_bank_name)    document.getElementById('set-pal-bank-name').value    = d.pal_bank_name;
-    if (d.announce)         document.getElementById('set-announce').value         = d.announce;
 
     adminCategories = Array.isArray(d.categories) && d.categories.length
       ? Array.from(new Set(d.categories.filter(cat => cat && cat.trim() && cat !== 'الكل').map(cat => cat.trim())))
@@ -2191,12 +2407,6 @@ async function saveBankInfo() {
   } catch(e) { toast('⚠️ خطأ في الحفظ'); }
 }
 
-async function saveAnnounce() {
-  try {
-    await _mergeSettings({ announce: document.getElementById('set-announce').value.trim() });
-    toast('✓ تم حفظ الإعلان');
-  } catch(e) { toast('⚠️ خطأ في الحفظ'); }
-}
 
 function renderCategoryTags() {
   const container = document.getElementById('category-tags');
@@ -2439,6 +2649,27 @@ function startOrdersListener() {
       }
       renderOrders();
     }, err => console.error('خطأ في listener:', err));
+
+  // polling احتياطي كل 30 ثانية لحالات انقطاع الـ WebSocket
+  setInterval(async () => {
+    try {
+      const snap = await db.collection('orders').orderBy('date', 'desc').get();
+      const newDocs = snap.docs.map(doc => doc.data());
+      const existingIds = new Set(adminOrders.map(o => String(o.id)));
+      const newOnes = newDocs.filter(o =>
+        !existingIds.has(String(o.id)) &&
+        new Date(o.date).getTime() > adminSessionStart &&
+        !shownOrderIds.has(String(o.id))
+      );
+      adminOrders = newDocs;
+      if (newOnes.length > 0) {
+        newOnes.forEach(o => shownOrderIds.add(String(o.id)));
+        playNotificationSound();
+        showNewOrderNotification(newOnes[0]);
+      }
+      renderOrders();
+    } catch(e) {}
+  }, 30000);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2494,7 +2725,7 @@ function renderOrders() {
   if (emptyEl)   emptyEl.style.display   = 'none';
   if (tableWrap) tableWrap.style.display = 'block';
 
-  const payMap = { islamic: 'البنك الإسلامي', palestine: 'محفظة بنك فلسطين', 'pal-bank': 'تحويل بنك فلسطين' };
+  const payMap = { islamic: 'البنك الإسلامي', palestine: 'محفظة بال بي', 'pal-bank': 'تحويل بنك فلسطين' };
 
   tbody.innerHTML = filtered.map(o => {
     const d         = new Date(o.date);
@@ -2555,6 +2786,388 @@ async function deleteOrder(id) {
     renderOrders();
     toast('🗑️ تم حذف الطلب');
   } catch(e) { toast('⚠️ خطأ في الحذف'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  COLLECTIONS
+// ═══════════════════════════════════════════════════════════════
+async function loadAdminCollections() {
+  try {
+    const docSnap = await db.collection('settings').doc('main').get();
+    adminCollections = (docSnap.exists && Array.isArray(docSnap.data().collections))
+      ? docSnap.data().collections : [];
+  } catch(e) { adminCollections = []; }
+  renderCollectionsList();
+}
+
+function renderCollectionsList() {
+  const container = document.getElementById('collections-list');
+  if (!container) return;
+  if (!adminCollections.length) {
+    container.innerHTML = `
+      <div style="background:white;border:1px solid var(--border);padding:60px 20px;text-align:center;color:var(--text-light)">
+        <div style="font-size:40px;margin-bottom:12px">✨</div>
+        <p style="font-size:15px;font-weight:600">لا توجد كولكشنات بعد — أضيفي أول كولكشن!</p>
+      </div>`;
+    return;
+  }
+  container.innerHTML = adminCollections.map(col => {
+    const releaseAt  = new Date(col.releaseAt);
+    const released   = releaseAt <= new Date();
+    const prodCount  = adminProducts.filter(p => p.collectionName === col.name).length;
+    const dateStr    = releaseAt.toLocaleString('ar-EG', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:false });
+    return `
+      <div class="collection-list-card">
+        <div class="collection-list-card-info">
+          <div class="collection-list-card-name">✨ ${col.name}</div>
+          <div class="collection-list-card-meta">
+            موعد الظهور: ${dateStr}<br>
+            ${released
+              ? '<span style="color:var(--success);font-weight:700">✓ تم الإطلاق</span>'
+              : '<span style="color:var(--warning);font-weight:700">⏳ لم تُطلق بعد</span>'}
+            · ${prodCount} منتج
+            · الشريط: ${col.showBanner
+              ? '<span style="color:var(--success);font-weight:700">مُفعَّل</span>'
+              : '<span style="color:var(--text-light)">معطَّل</span>'}
+          </div>
+        </div>
+        <div class="collection-list-card-actions">
+          <button class="act-btn toggle" onclick="toggleCollectionBanner('${col.id}')">
+            ${col.showBanner ? 'إيقاف الشريط' : 'تفعيل الشريط'}
+          </button>
+          <button class="act-btn edit" onclick="openCollectionForm('${col.id}')">✏️ تعديل</button>
+          <button class="act-btn del"  onclick="deleteCollection('${col.id}')">🗑️</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openCollectionForm(id) {
+  editingCollectionId = id || null;
+  if (id) {
+    const col = adminCollections.find(c => c.id === id);
+    if (!col) return;
+    collectionDraft   = { name: col.name, releaseAt: col.releaseAt, showBanner: col.showBanner !== false };
+    _colBannerEnabled = collectionDraft.showBanner;
+    const colProds    = adminProducts.filter(p => p.collectionName === col.name);
+    collectionProductDrafts = colProds.map(p => ({
+      id:            p.id,
+      name:          p.name || '',
+      category:      p.category || '',
+      price:         p.price || 0,
+      originalPrice: p.originalPrice || 0,
+      quantity:      p.quantity !== undefined ? p.quantity : 1,
+      sizes:         p.sizes ? [...p.sizes] : [],
+      description:   p.description || '',
+      label:         p.label || '',
+      colorName:     p.colorName || '',
+      images:        (p.images && p.images.length) ? [...p.images] : (p.image ? [p.image] : []),
+      inStock:       p.inStock !== false,
+      open:          false
+    }));
+    document.getElementById('col-form-title').textContent = 'تعديل الكولكشن';
+  } else {
+    collectionDraft         = { name: '', releaseAt: '', showBanner: true };
+    collectionProductDrafts = [];
+    _colBannerEnabled       = true;
+    document.getElementById('col-form-title').textContent = 'إضافة كولكشن جديدة';
+  }
+  document.getElementById('col-name').value    = collectionDraft.name;
+  document.getElementById('col-release').value = collectionDraft.releaseAt ? toLocalDateTime(collectionDraft.releaseAt) : '';
+  updateColBannerUI();
+  renderCollectionProductsSection();
+  document.getElementById('collections-list-view').style.display  = 'none';
+  document.getElementById('collection-form-view').style.display   = '';
+}
+
+function cancelCollectionForm() {
+  document.getElementById('collection-form-view').style.display  = 'none';
+  document.getElementById('collections-list-view').style.display = '';
+  collectionProductDrafts = [];
+}
+
+function toggleColBanner() {
+  _colBannerEnabled = !_colBannerEnabled;
+  updateColBannerUI();
+}
+
+function updateColBannerUI() {
+  const track = document.getElementById('col-banner-track');
+  const label = document.getElementById('col-banner-label');
+  if (track) track.classList.toggle('on', _colBannerEnabled);
+  if (label) label.textContent = _colBannerEnabled
+    ? 'مُفعَّل — سيظهر الشريط على الموقع'
+    : 'معطَّل — لن يظهر الشريط';
+}
+
+function addCollectionProduct() {
+  collectionProductDrafts.push({
+    id: null, name: '', category: '', price: 0, originalPrice: 0,
+    quantity: 1, sizes: [], description: '', label: '', colorName: '',
+    images: [], inStock: true, open: true
+  });
+  renderCollectionProductsSection();
+  setTimeout(() => {
+    const cards = document.querySelectorAll('.col-product-card');
+    if (cards.length) cards[cards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 60);
+}
+
+function deleteCollectionProduct(i) {
+  collectionProductDrafts.splice(i, 1);
+  renderCollectionProductsSection();
+}
+
+function toggleColProductOpen(i) {
+  if (!collectionProductDrafts[i]) return;
+  collectionProductDrafts[i].open = !collectionProductDrafts[i].open;
+  const card = document.getElementById('col-prod-card-' + i);
+  if (card) card.classList.toggle('open', collectionProductDrafts[i].open);
+}
+
+function renderCollectionProductsSection() {
+  const container = document.getElementById('col-products-container');
+  if (!container) return;
+  if (!collectionProductDrafts.length) {
+    container.innerHTML = '<div style="text-align:center;color:var(--text-light);padding:30px;font-size:13px">اضغطي "+ إضافة منتج" لبدء إضافة منتجات الكولكشن</div>';
+    return;
+  }
+  const STD_SIZES = ['XS','S','M','L','XL','XXL','XXXL','فري سايز'];
+  container.innerHTML = collectionProductDrafts.map((draft, i) => {
+    const sizesHtml = STD_SIZES.map(sz =>
+      `<button type="button" class="size-toggle${draft.sizes.includes(sz) ? ' selected' : ''}"
+               onclick="toggleColSize(${i},'${sz}',this)">${sz}</button>`
+    ).join('');
+    const imgHtml = draft.images.map((img, j) => `
+      <div class="img-preview">
+        <img src="${img}" alt="">
+        <button class="img-preview-del" onclick="removeColImage(${i},${j})">✕</button>
+        ${j === 0 ? '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.5);color:white;font-size:10px;text-align:center;padding:2px">رئيسية</div>' : ''}
+      </div>`).join('');
+    const catOpts = adminCategories.map(cat =>
+      `<option value="${cat}" ${draft.category === cat ? 'selected' : ''}>${cat}</option>`).join('');
+    return `
+      <div class="col-product-card${draft.open ? ' open' : ''}" id="col-prod-card-${i}">
+        <div class="col-prod-head" onclick="toggleColProductOpen(${i})">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span>👗</span>
+            <span class="col-prod-title" id="col-prod-title-${i}">${draft.name || ('منتج ' + (i + 1))}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <button type="button" class="act-btn del" style="padding:4px 10px;font-size:11px"
+                    onclick="event.stopPropagation();deleteCollectionProduct(${i})">حذف</button>
+            <span style="font-size:11px;color:var(--text-light)">${draft.open ? '▲' : '▼'}</span>
+          </div>
+        </div>
+        <div class="col-prod-body">
+          <div class="col-prod-form-grid">
+
+            <div class="form-field">
+              <label>اسم المنتج *</label>
+              <input type="text" value="${draft.name.replace(/"/g,'&quot;')}" placeholder="اسم المنتج"
+                     oninput="collectionProductDrafts[${i}].name=this.value;(document.getElementById('col-prod-title-${i}')||{}).textContent=this.value||'منتج ${i+1}'">
+            </div>
+
+            <div class="form-field">
+              <label>الفئة *</label>
+              <select onchange="collectionProductDrafts[${i}].category=this.value">
+                <option value="">-- اختاري الفئة --</option>${catOpts}
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label>لون المنتج (اختياري)</label>
+              <input type="text" value="${draft.colorName.replace(/"/g,'&quot;')}" placeholder="مثال: بني، أسود"
+                     oninput="collectionProductDrafts[${i}].colorName=this.value">
+            </div>
+
+            <div class="form-field">
+              <label>سعر البيع (₪) *</label>
+              <input type="number" value="${draft.price || ''}" placeholder="0" min="0"
+                     oninput="collectionProductDrafts[${i}].price=+this.value">
+            </div>
+
+            <div class="form-field">
+              <label>السعر قبل الخصم (₪)</label>
+              <input type="number" value="${draft.originalPrice || ''}" placeholder="اتركيه فارغاً" min="0"
+                     oninput="collectionProductDrafts[${i}].originalPrice=+this.value">
+            </div>
+
+            <div class="form-field">
+              <label>الكمية المتاحة</label>
+              <input type="number" value="${draft.quantity}" placeholder="1" min="0"
+                     oninput="collectionProductDrafts[${i}].quantity=+this.value">
+            </div>
+
+            <div class="form-field">
+              <label>ليبل المنتج</label>
+              <input type="text" value="${draft.label.replace(/"/g,'&quot;')}" placeholder="مثال: جديد، حصري"
+                     oninput="collectionProductDrafts[${i}].label=this.value">
+            </div>
+
+            <div class="form-field form-full">
+              <label>المقاسات المتاحة</label>
+              <div class="col-sizes-wrap">${sizesHtml}</div>
+            </div>
+
+            <div class="form-field form-full">
+              <label>وصف المنتج</label>
+              <textarea rows="2" placeholder="وصف المنتج..."
+                        oninput="collectionProductDrafts[${i}].description=this.value">${draft.description}</textarea>
+            </div>
+
+            <div class="form-field form-full">
+              <label>صور المنتج</label>
+              <div class="img-upload-area" onclick="document.getElementById('col-img-${i}').click()">
+                <input type="file" id="col-img-${i}" accept="image/*" multiple style="display:none"
+                       onchange="handleColImages(${i},this)">
+                <div class="upload-icon">📸</div>
+                <div class="upload-text">اضغطي لرفع الصور</div>
+                <div class="upload-hint">PNG, JPG, WEBP — يمكنك رفع أكثر من صورة</div>
+              </div>
+              <div class="img-previews" id="col-img-previews-${i}">${imgHtml}</div>
+            </div>
+
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleColSize(i, size, btn) {
+  const draft = collectionProductDrafts[i];
+  if (!draft) return;
+  const idx = draft.sizes.indexOf(size);
+  if (idx >= 0) { draft.sizes.splice(idx, 1); btn.classList.remove('selected'); }
+  else           { draft.sizes.push(size);    btn.classList.add('selected'); }
+}
+
+function handleColImages(i, input) {
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      compressImage(e.target.result, 800, 0.8, compressed => {
+        collectionProductDrafts[i].images.push(compressed);
+        renderColImagePreviews(i);
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function renderColImagePreviews(i) {
+  const el = document.getElementById('col-img-previews-' + i);
+  if (!el) return;
+  const imgs = (collectionProductDrafts[i] || {}).images || [];
+  el.innerHTML = imgs.map((img, j) => `
+    <div class="img-preview">
+      <img src="${img}" alt="">
+      <button class="img-preview-del" onclick="removeColImage(${i},${j})">✕</button>
+      ${j === 0 ? '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.5);color:white;font-size:10px;text-align:center;padding:2px">رئيسية</div>' : ''}
+    </div>`).join('');
+}
+
+function removeColImage(i, j) {
+  if (collectionProductDrafts[i]) { collectionProductDrafts[i].images.splice(j, 1); renderColImagePreviews(i); }
+}
+
+async function saveCollection() {
+  const name       = document.getElementById('col-name').value.trim();
+  const releaseRaw = document.getElementById('col-release').value;
+  if (!name)       { toast('⚠️ أدخلي اسم الكولكشن'); return; }
+  if (!releaseRaw) { toast('⚠️ حددي موعد ظهور الكولكشن'); return; }
+  if (!collectionProductDrafts.length) { toast('⚠️ أضيفي منتجاً واحداً على الأقل'); return; }
+
+  for (let i = 0; i < collectionProductDrafts.length; i++) {
+    const d = collectionProductDrafts[i];
+    if (!d.name)           { toast(`⚠️ المنتج ${i+1}: أدخلي الاسم`); return; }
+    if (!d.category)       { toast(`⚠️ المنتج "${d.name}": اختاري الفئة`); return; }
+    if (!d.price || d.price <= 0) { toast(`⚠️ المنتج "${d.name}": أدخلي سعراً صحيحاً`); return; }
+  }
+
+  const releaseAt = new Date(releaseRaw).toISOString();
+  const colId     = editingCollectionId || String(Date.now());
+  const colObj    = { id: colId, name, releaseAt, showBanner: _colBannerEnabled };
+
+  try {
+    const existIdx = adminCollections.findIndex(c => c.id === colId);
+    const updatedCols = existIdx >= 0
+      ? adminCollections.map((c, i) => i === existIdx ? colObj : c)
+      : [...adminCollections, colObj];
+
+    await _mergeSettings({ collections: updatedCols });
+    adminCollections = updatedCols;
+
+    // Save each product with collectionName + publishAt
+    const baseId = Date.now();
+    for (let i = 0; i < collectionProductDrafts.length; i++) {
+      const draft   = collectionProductDrafts[i];
+      const prodId  = draft.id || (baseId + i);
+      const images  = draft.images || [];
+      const product = {
+        id:             prodId,
+        name:           draft.name,
+        category:       draft.category,
+        collectionName: name,
+        collectionLabel: name,
+        publishAt:      releaseAt,
+        price:          draft.price,
+        originalPrice:  draft.originalPrice || 0,
+        discount:       (draft.originalPrice > draft.price && draft.originalPrice > 0)
+                          ? Math.round((1 - draft.price / draft.originalPrice) * 100) : 0,
+        quantity:       draft.quantity !== undefined ? draft.quantity : 1,
+        sizes:          draft.sizes || [],
+        sizeChart:      [],
+        description:    draft.description || '',
+        label:          draft.label || '',
+        rating:         4.9,
+        reviews:        0,
+        inStock:        draft.inStock !== false,
+        image:          images[0] || '',
+        images:         images.length > 1 ? images : [],
+        colorName:      draft.colorName || '',
+        linkedColors:   [],
+        updatedAt:      Date.now()
+      };
+      await db.collection('products').doc(String(product.id)).set(product);
+      const idx = adminProducts.findIndex(p => p.id === product.id);
+      if (idx >= 0) adminProducts[idx] = product; else adminProducts.unshift(product);
+    }
+
+    renderProductsTable();
+    renderCollectionsList();
+    cancelCollectionForm();
+    toast(`✓ تم حفظ كولكشن "${name}" (${collectionProductDrafts.length} منتج)`);
+  } catch(e) {
+    console.error(e);
+    toast('⚠️ خطأ في حفظ الكولكشن');
+  }
+}
+
+async function deleteCollection(id) {
+  if (!confirm('حذف الكولكشن؟ المنتجات لن تُحذف لكنها ستظهر بدون كولكشن.')) return;
+  try {
+    const updated = adminCollections.filter(c => c.id !== id);
+    await _mergeSettings({ collections: updated });
+    adminCollections = updated;
+    renderCollectionsList();
+    toast('🗑️ تم حذف الكولكشن');
+  } catch(e) { toast('⚠️ خطأ في الحذف'); }
+}
+
+async function toggleCollectionBanner(id) {
+  const col = adminCollections.find(c => c.id === id);
+  if (!col) return;
+  col.showBanner = !col.showBanner;
+  try {
+    await _mergeSettings({ collections: adminCollections });
+    renderCollectionsList();
+    toast(col.showBanner ? '✓ تم تفعيل الشريط' : '✓ تم إيقاف الشريط');
+  } catch(e) {
+    col.showBanner = !col.showBanner;
+    toast('⚠️ خطأ في التحديث');
+  }
 }
 </script>
 </body>
