@@ -14,6 +14,10 @@ let BANK_INFO = {
 
 const DEFAULT_STORE_CATEGORIES = ['فساتين محجب', 'فساتين قصيرة', 'بلايز قصيرة', 'عبايات', 'أحذية'];
 
+const _PROD_CACHE_KEY = 'yara_products_v1';
+const _PROD_CACHE_TTL = 15 * 60 * 1000;
+const _PROD_BATCH     = 20;
+
 // ===== STATE =====
 let state = {
   products: [],
@@ -66,45 +70,69 @@ async function init() {
   renderProducts();
 }
 
+function _readProdCache() {
+  try {
+    const r = localStorage.getItem(_PROD_CACHE_KEY);
+    if (!r) return null;
+    const { d, t } = JSON.parse(r);
+    return (Date.now() - t < _PROD_CACHE_TTL) ? d : null;
+  } catch { return null; }
+}
+
+function _writeProdCache(products) {
+  try { localStorage.setItem(_PROD_CACHE_KEY, JSON.stringify({ d: products, t: Date.now() })); } catch {}
+}
+
+async function _fetchBatched(onPartial) {
+  let cursor = null, all = [];
+  while (true) {
+    let q = db.collection('products').orderBy('id', 'desc').limit(_PROD_BATCH);
+    if (cursor) q = q.startAfter(cursor);
+    const snap = await q.get();
+    if (snap.empty) break;
+    all = all.concat(snap.docs.map(d => d.data()));
+    if (onPartial) onPartial([...all]);
+    cursor = snap.docs[snap.docs.length - 1];
+    if (snap.docs.length < _PROD_BATCH) break;
+  }
+  return all;
+}
+
 function loadProducts() {
-  return new Promise(resolve => {
-    let initialLoad = true;
-
-    // إذا لم يرد الـ snapshot خلال 9 ثوانٍ → نعرض زر الإعادة
-    const failTimer = setTimeout(() => {
-      if (!initialLoad) return;
-      initialLoad = false;
-      state.productsLoadError = true;
+  return new Promise(async resolve => {
+    const cached = _readProdCache();
+    if (cached) {
+      state.products = cached;
       resolve();
-    }, 9000);
+      _fetchBatched(null)
+        .then(fresh => { _writeProdCache(fresh); state.products = fresh; renderProducts(); renderCollectionBanner(); })
+        .catch(() => {});
+      return;
+    }
 
-    db.collection('products').onSnapshot(
-      snap => {
-        // نتجاهل snapshot فارغ من الكاش أثناء الانتظار
-        if (initialLoad && snap.metadata.fromCache && snap.docs.length === 0) return;
+    let resolved = false;
+    const fail = setTimeout(() => {
+      if (!resolved) { resolved = true; state.productsLoadError = true; resolve(); }
+    }, 15000);
 
-        clearTimeout(failTimer);
-        state.products = snap.docs.map(doc => doc.data());
-
-        if (initialLoad) {
-          initialLoad = false;
-          resolve();
-        } else {
-          renderProducts();
-          renderCollectionBanner();
-        }
-      },
-      err => {
-        clearTimeout(failTimer);
-        console.error(err);
-        if (initialLoad) {
-          initialLoad = false;
-          state.products = [];
-          state.productsLoadError = true;
-          resolve();
-        }
+    try {
+      await _fetchBatched(partial => {
+        state.products = partial;
+        if (!resolved) { resolved = true; clearTimeout(fail); resolve(); }
+        else { renderProducts(); renderCollectionBanner(); }
+      });
+      clearTimeout(fail);
+      _writeProdCache(state.products);
+      if (!resolved) { resolved = true; resolve(); }
+    } catch (err) {
+      clearTimeout(fail);
+      console.error(err);
+      if (!resolved) {
+        if (!state.products.length) state.productsLoadError = true;
+        resolved = true;
+        resolve();
       }
-    );
+    }
   });
 }
 
