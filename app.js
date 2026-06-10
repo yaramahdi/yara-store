@@ -83,56 +83,39 @@ function _writeProdCache(products) {
   try { localStorage.setItem(_PROD_CACHE_KEY, JSON.stringify({ d: products, t: Date.now() })); } catch {}
 }
 
-async function _fetchBatched(onPartial) {
-  let cursor = null, all = [];
-  while (true) {
-    let q = db.collection('products').limit(_PROD_BATCH);
-    if (cursor) q = q.startAfter(cursor);
-    const snap = await q.get();
-    if (snap.empty) break;
-    all = all.concat(snap.docs.map(d => d.data()));
-    if (onPartial) onPartial([...all]);
-    cursor = snap.docs[snap.docs.length - 1];
-    if (snap.docs.length < _PROD_BATCH) break;
-  }
-  return all;
-}
-
 function loadProducts() {
-  return new Promise(async resolve => {
+  return new Promise(resolve => {
     const cached = _readProdCache();
     if (cached) {
       state.products = cached;
       resolve();
-      _fetchBatched(null)
-        .then(fresh => { _writeProdCache(fresh); state.products = fresh; renderProducts(); renderCollectionBanner(); })
-        .catch(() => {});
-      return;
     }
 
-    let resolved = false;
+    let resolved = !!cached;
     const fail = setTimeout(() => {
       if (!resolved) { resolved = true; state.productsLoadError = true; resolve(); }
-    }, 15000);
+    }, 20000);
 
-    try {
-      await _fetchBatched(partial => {
-        state.products = partial;
-        if (!resolved) { resolved = true; clearTimeout(fail); resolve(); }
+    db.collection('products').onSnapshot(
+      snap => {
+        if (!resolved && snap.metadata.fromCache && snap.docs.length === 0) return;
+        clearTimeout(fail);
+        const products = snap.docs.map(d => d.data());
+        state.products = products;
+        _writeProdCache(products);
+        if (!resolved) { resolved = true; resolve(); }
         else { renderProducts(); renderCollectionBanner(); }
-      });
-      clearTimeout(fail);
-      _writeProdCache(state.products);
-      if (!resolved) { resolved = true; resolve(); }
-    } catch (err) {
-      clearTimeout(fail);
-      console.error(err);
-      if (!resolved) {
-        if (!state.products.length) state.productsLoadError = true;
-        resolved = true;
-        resolve();
+      },
+      err => {
+        clearTimeout(fail);
+        console.error(err);
+        if (!resolved) {
+          if (!state.products.length) state.productsLoadError = true;
+          resolved = true;
+          resolve();
+        }
       }
-    }
+    );
   });
 }
 
