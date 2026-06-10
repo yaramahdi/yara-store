@@ -14,9 +14,11 @@ let BANK_INFO = {
 
 const DEFAULT_STORE_CATEGORIES = ['فساتين محجب', 'فساتين قصيرة', 'بلايز قصيرة', 'عبايات', 'أحذية'];
 
-const _PROD_CACHE_KEY = 'yara_products_v1';
-const _PROD_CACHE_TTL = 15 * 60 * 1000;
-const _PROD_BATCH     = 20;
+const _PROD_CACHE_KEY     = 'yara_products_v1';
+const _PROD_CACHE_TTL     = 15 * 60 * 1000;
+const _PROD_BATCH         = 20;
+const _SETTINGS_CACHE_KEY = 'yara_settings_v1';
+const _SETTINGS_CACHE_TTL = 30 * 60 * 1000;
 
 // ===== STATE =====
 let state = {
@@ -107,13 +109,9 @@ function loadProducts() {
         else { renderProducts(); renderCollectionBanner(); }
       },
       err => {
-        clearTimeout(fail);
         console.error(err);
-        if (!resolved) {
-          if (!state.products.length) state.productsLoadError = true;
-          resolved = true;
-          resolve();
-        }
+        // لا نحسم هنا — onSnapshot بيعيد المحاولة تلقائياً
+        // fail timer هو اللي يحسم بعد 20 ثانية
       }
     );
   });
@@ -137,30 +135,33 @@ function saveWishlist() {
   localStorage.setItem("yara_wishlist", JSON.stringify(state.wishlist));
 }
 
+function _applySettings(data) {
+  if (data.whatsapp) WHATSAPP_NUMBER = data.whatsapp;
+  Object.assign(BANK_INFO, data);
+  if (Array.isArray(data.categories) && data.categories.length) {
+    const categories = Array.from(new Set(data.categories.filter(cat => cat && cat.trim() && cat !== 'الكل').map(cat => cat.trim())));
+    state.categories = ['الكل', ...categories];
+  }
+  if (data.paymentVisibility) state.paymentVisibility = { ...state.paymentVisibility, ...data.paymentVisibility };
+  if (data.catImages) state.catImages = { ...data.catImages };
+  if (Array.isArray(data.collections)) state.collections = data.collections;
+}
+
 async function loadBankInfo() {
+  try {
+    const raw = localStorage.getItem(_SETTINGS_CACHE_KEY);
+    if (raw) {
+      const { d, t } = JSON.parse(raw);
+      if (Date.now() - t < _SETTINGS_CACHE_TTL) _applySettings(d);
+    }
+  } catch {}
+
   try {
     const docSnap = await db.collection('settings').doc('main').get();
     if (docSnap.exists) {
       const data = docSnap.data();
-      if (data.whatsapp) WHATSAPP_NUMBER = data.whatsapp;
-      Object.assign(BANK_INFO, data);
-
-      if (Array.isArray(data.categories) && data.categories.length) {
-        const categories = Array.from(new Set(data.categories.filter(cat => cat && cat.trim() && cat !== 'الكل').map(cat => cat.trim())));
-        state.categories = ['الكل', ...categories];
-      }
-
-      if (data.paymentVisibility) {
-        state.paymentVisibility = { ...state.paymentVisibility, ...data.paymentVisibility };
-      }
-
-      if (data.catImages) {
-        state.catImages = { ...data.catImages };
-      }
-
-      if (Array.isArray(data.collections)) {
-        state.collections = data.collections;
-      }
+      try { localStorage.setItem(_SETTINGS_CACHE_KEY, JSON.stringify({ d: data, t: Date.now() })); } catch {}
+      _applySettings(data);
     }
   } catch (e) {
     console.error('خطأ في تحميل الإعدادات:', e);
