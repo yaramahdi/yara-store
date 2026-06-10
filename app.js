@@ -86,7 +86,7 @@ function _writeProdCache(products) {
 async function _fetchBatched(onPartial) {
   let cursor = null, all = [];
   while (true) {
-    let q = db.collection('products').orderBy('id', 'desc').limit(_PROD_BATCH);
+    let q = db.collection('products').limit(_PROD_BATCH);
     if (cursor) q = q.startAfter(cursor);
     const snap = await q.get();
     if (snap.empty) break;
